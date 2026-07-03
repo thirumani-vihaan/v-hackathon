@@ -32,9 +32,17 @@ project. Every contributor (human or agent) MUST follow it.
 | `agents/compliance_agent.py` | Sensor → `ComplianceResult` (deterministic). |
 | `agents/knowledge_agent.py` | Query → `KnowledgeResult` (RAG + citations). |
 | `agents/safety_agent.py` | Sensor+vision → `SafetyAlert` (compound scoring). |
-| `agents/orchestrator.py` | LangGraph routing → `OrchestratorResult`. |
+| `agents/output_agent.py` | Format/validate `OrchestratorResult`; multilingual `briefing()` (no LLM). |
+| `agents/orchestrator.py` | LangGraph routing → OutputAgent format → `OrchestratorResult`. |
+| `utils/local_vision.py` | Offline OpenCV hazard detection → `VisionResult` (fallback). |
+| `models/train_hazard_model.py` | Reproducible CPU hazard model → `models/hazard_model.npz`. |
+| `utils/exposure_calc.py` | PEL/STEL, %LEL, ventilation, evac radius (deterministic). |
+| `utils/safety_calendar.py` | Seasonal + shift safety advisories (deterministic). |
+| `utils/response_directory.py` | Helpline + nearest-facility finder (haversine). |
+| `utils/translations.py` | 10-language evacuation messages (+ optional Gemini). |
+| `utils/voice.py` | Browser Web-Speech TTS component (offline, zero deps). |
 | `knowledge_base/build_db.py` | Ingest PDFs into ChromaDB. |
-| `ui/app.py` | Streamlit UI (4 tabs + folium map, port 8502). |
+| `ui/app.py` | Streamlit UI (6 tabs + folium map, port 8502). |
 | `main.py` | `run_vizag_scenario()` entry point. |
 
 ## 3. ARCHITECTURE
@@ -57,9 +65,20 @@ project. Every contributor (human or agent) MUST follow it.
         +----------------+--------+--------+-------------------+
                                   v
                         +------------------+
+                        |   OutputAgent    |  format + multilingual briefing()
+                        +--------+---------+
+                                  v
+                        +------------------+
                         | OrchestratorResult|
                         +------------------+
 ```
+
+### Vision fallback chain
+`VisionAgent.analyze()` tries Gemini first; if the key is missing or Gemini returns a
+non-substantive result, it delegates to `utils/local_vision.detect()` which performs a
+**genuine OpenCV HSV/brightness pixel analysis** (smoke/fire, electrical arc, gas haze)
+and blends in the CPU-trained `models/hazard_model.npz` probability. This is a real
+offline detector, never a canned response.
 
 ## 4. DATA FLOW CONTRACTS (typed dataclasses)
 
@@ -68,8 +87,11 @@ project. Every contributor (human or agent) MUST follow it.
 - `QueryInput`       -> `KnowledgeAgent.query()`     -> `KnowledgeResult`
 - `SensorInput`      -> `SafetyAgent.assess()`       -> `SafetyAlert`
 - `OrchestratorInput`-> `Orchestrator.run()`         -> `OrchestratorResult`
+- `OrchestratorResult` -> `OutputAgent.format()`     -> `OrchestratorResult` (5th stage)
 
 Agents accept their typed `*Input` dataclass and return their `*Result` dataclass.
+`OutputAgent.format()` is an identity/validation pass (schema-safe); its value-add
+`briefing()` returns a plain-language string (not a new dataclass).
 
 ## 5. ORCHESTRATOR dict -> dataclass CONVERSION
 

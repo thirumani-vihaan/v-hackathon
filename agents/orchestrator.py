@@ -25,6 +25,7 @@ from agents.vision_agent import VisionAgent  # noqa: E402
 from agents.compliance_agent import ComplianceAgent  # noqa: E402
 from agents.knowledge_agent import KnowledgeAgent  # noqa: E402
 from agents.safety_agent import SafetyAgent  # noqa: E402
+from agents.output_agent import OutputAgent  # noqa: E402
 
 
 class GraphState(TypedDict, total=False):
@@ -50,6 +51,7 @@ class Orchestrator:
         self.vision_agent = VisionAgent()
         self.compliance_agent = ComplianceAgent()
         self.safety_agent = SafetyAgent()
+        self.output_agent = OutputAgent()
         # Knowledge agent touches ChromaDB; allow injection / lazy failure.
         self.knowledge_agent = knowledge_agent or KnowledgeAgent()
         self._app = self._build_graph()
@@ -146,7 +148,7 @@ class Orchestrator:
         except Exception as e:  # noqa: BLE001
             return OrchestratorResult(request_id=orch_input.request_id,
                                       input_type=orch_input.input_type, error=str(e))
-        return OrchestratorResult(
+        result = OrchestratorResult(
             request_id=orch_input.request_id,
             input_type=orch_input.input_type,
             vision=final.get("vision"),
@@ -155,6 +157,8 @@ class Orchestrator:
             knowledge=final.get("knowledge"),
             error=final.get("error"),
         )
+        # 5th stage: OutputAgent formats/validates the aggregated result.
+        return self.output_agent.format(result)
 
     def process(self, orch_input: OrchestratorInput) -> OrchestratorResult:
         """Primary entry point; alias of run(). Returns an OrchestratorResult."""

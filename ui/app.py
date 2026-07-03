@@ -35,6 +35,12 @@ from utils.vision_overlay import draw_hazards  # noqa: E402
 from utils.zone_status import zone_colors, time_to_critical, ZONES  # noqa: E402
 from utils.plant_layout import ensure_plant_layout  # noqa: E402
 from utils import translations  # noqa: E402
+from utils import exposure_calc, safety_calendar, response_directory, voice  # noqa: E402
+from utils.voice import speak_html  # noqa: E402
+from agents.output_agent import OutputAgent  # noqa: E402
+import streamlit.components.v1 as components  # noqa: E402
+
+_OUTPUT_AGENT = OutputAgent()
 
 st.set_page_config(page_title="IndustrialSafetyAI", layout="wide")
 
@@ -108,10 +114,23 @@ st.title("🛡️ IndustrialSafetyAI")
 st.caption("Multi-agent industrial safety — vision, deterministic compliance, "
            "compound risk scoring, grounded knowledge RAG, live dispatch.")
 
+# 24x7 helpline banner (always visible).
+st.markdown(
+    f"<div style='background:#b71c1c;color:#fff;padding:8px 14px;border-radius:6px;"
+    f"font-weight:600;text-align:center'>📞 {response_directory.helpline_banner()}"
+    f"</div>", unsafe_allow_html=True)
+
 with st.sidebar:
     st.header("System")
     _key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
     st.write("Gemini:", "🟢 configured" if _key else "🔴 not set (safe fallback)")
+    _offline = os.environ.get("OFFLINE_MODE", "0") == "1" or not _key
+    st.write("Mode:", "🟠 OFFLINE (local CV + RAG)" if _offline
+             else "🟢 ONLINE (Gemini available)")
+    import os.path as _op
+    st.write("Local hazard model:",
+             "🟢 trained" if _op.isfile(_op.join(_ROOT, "models", "hazard_model.npz"))
+             else "—")
     st.write("Knowledge LLM:",
              "on" if os.environ.get("KNOWLEDGE_LLM", "1") not in ("0",) else "off")
     st.divider()
@@ -128,8 +147,9 @@ with st.sidebar:
         except Exception as e:  # noqa: BLE001
             st.warning(f"ZIP unavailable: {e}")
 
-tab_dash, tab_vision, tab_knowledge, tab_map, tab_dispatch = st.tabs(
-    ["Dashboard", "Vision", "Knowledge", "Zone Map", "Emergency Dispatch"])
+tab_dash, tab_vision, tab_knowledge, tab_map, tab_dispatch, tab_tools = st.tabs(
+    ["Dashboard", "Vision", "Knowledge", "Zone Map", "Emergency Dispatch",
+     "Safety Tools"])
 
 # session init
 for k, v in dict(d_gas=8.0, d_temp=32.0, d_oxy=20.9, d_hum=50.0, d_workers=2,
@@ -505,6 +525,8 @@ with tab_dispatch:
                                                      use_gemini=True)
         st.write(f"**Evacuation message ({lang}, via {msrc}):**")
         st.success(message)
+        components.html(speak_html(message, lang,
+                                   label=f"🔊 Speak alert ({lang})"), height=70)
         st.write("**Simulated channel payloads:**")
         for c in channels or ["SMS"]:
             st.code(f"[{c}] severity={severity} zone={zone} "
@@ -519,3 +541,86 @@ with tab_dispatch:
             "message_source": msrc,
         })
         st.caption("Logged to evidence trail as dispatch_simulation.")
+
+
+# ============================================================
+# SAFETY TOOLS  (exposure calculator, seasonal calendar, response finder,
+#                consolidated multilingual voice briefing)
+# ============================================================
+with tab_tools:
+    st.subheader("🧰 Safety Tools")
+
+    c1, c2 = st.columns(2)
+
+    # ---- Industrial-hygiene exposure & ventilation calculator ----
+    with c1:
+        st.markdown("### Exposure & Ventilation Calculator")
+        gas_key = st.selectbox(
+            "Gas", list(exposure_calc.GASES.keys()),
+            format_func=lambda k: exposure_calc.GASES[k]["name"])
+        ppm = st.number_input("Measured concentration (ppm)", 0.0, 100000.0,
+                              120.0, step=1.0)
+        vol = st.number_input("Space volume (m³)", 1.0, 100000.0, 100.0, step=10.0)
+        ach = st.slider("Target air changes / hour", 1, 30, 12)
+        if st.button("Compute exposure", type="primary"):
+            rep = exposure_calc.full_report(gas_key, ppm, vol, ach)
+            ex = rep["exposure"]
+            badge = {"IDLH": "🔴", "FLAMMABLE": "🟠", "OVER_STEL": "🟠",
+                     "OVER_PEL": "🟡", "OK": "🟢"}.get(ex["status"], "⚪")
+            st.metric("Status", f"{badge} {ex['status']}")
+            m = st.columns(3)
+            m[0].metric("PEL ratio", f"{ex['pel_ratio']}×")
+            m[1].metric("% of LEL", f"{rep['lel_percent']}%")
+            m[2].metric("Evac radius", f"{rep['evacuation_radius_m']} m")
+            st.write(f"Recommended ventilation: **{rep['recommended_ventilation_cfm']} "
+                     f"CFM** (purge ≈ {rep['purge_time_min_at_recommended']} min).")
+            for n in ex["notes"]:
+                st.write("• " + n)
+            append_event({"type": "exposure_calc", "gas": gas_key, "ppm": ppm,
+                          "status": ex["status"],
+                          "lel_percent": rep["lel_percent"]})
+
+    # ---- Response-facility finder ----
+    with c2:
+        st.markdown("### Nearest Response Facilities")
+        z = st.selectbox("From zone", list(response_directory.ZONE_COORDS.keys()))
+        ftype = st.selectbox("Type", ["Any", "Hospital", "Fire", "Mutual-Aid",
+                                      "Command"])
+        near = response_directory.nearest_facilities(
+            z, top_k=4, facility_type=None if ftype == "Any" else ftype)
+        st.table(pd.DataFrame([
+            {"Facility": f["name"], "Type": f["type"],
+             "Distance (km)": f["distance_km"]} for f in near]))
+        st.markdown("**On-site contacts**")
+        st.table(pd.DataFrame(response_directory.CONTACTS))
+
+    st.divider()
+
+    # ---- Seasonal safety calendar ----
+    st.markdown("### 📅 Seasonal Safety Calendar")
+    months = ["January", "February", "March", "April", "May", "June", "July",
+              "August", "September", "October", "November", "December"]
+    mi = st.selectbox("Month", months, index=datetime.now().month - 1)
+    adv = safety_calendar.advisories_for(months.index(mi) + 1)
+    st.write(f"Season: **{adv['season'].replace('_', ' ').title()}** — "
+             f"{safety_calendar.shift_note()}")
+    for a in adv["advisories"]:
+        st.write("• " + a)
+
+    st.divider()
+
+    # ---- Consolidated multilingual voice briefing (OutputAgent) ----
+    st.markdown("### 🗣️ Incident Briefing (OutputAgent, voice-ready)")
+    last = st.session_state.get("last_result")
+    if last is None:
+        st.info("Run a Dashboard scan first to generate a briefing.")
+    else:
+        blang = st.selectbox("Briefing language",
+                             list(translations.LANGUAGES.keys()), key="brief_lang")
+        brief = _OUTPUT_AGENT.briefing(last, blang)
+        st.text(brief)
+        components.html(speak_html(brief, blang, label="🔊 Read briefing aloud"),
+                        height=70)
+        append_event({"type": "briefing", "request_id": last.request_id,
+                      "language": blang,
+                      "severity": _OUTPUT_AGENT.severity(last)})

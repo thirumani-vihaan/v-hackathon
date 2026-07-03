@@ -32,10 +32,10 @@ def fresh():
     return at
 
 
-# 1) initial render, no exception, 5 tabs
+# 1) initial render, no exception, 6 tabs
 at = fresh()
 check("initial render no exception", not at.exception, str(at.exception))
-check("has 5 tabs", len(at.tabs) == 5, f"tabs={len(at.tabs)}")
+check("has 6 tabs", len(at.tabs) == 6, f"tabs={len(at.tabs)}")
 
 # 2) Dashboard: Run once
 at = fresh()
@@ -83,6 +83,15 @@ if sel:
     if ro:
         ro[0].click().run()
     check("preset+run no exception", not at.exception, str(at.exception))
+
+# 7) Safety Tools: Compute exposure
+at = fresh()
+btns = [b for b in at.button if "Compute exposure" in (b.label or "")]
+check("tools has Compute exposure", len(btns) == 1)
+if btns:
+    btns[0].click().run()
+    check("tools compute no exception", not at.exception, str(at.exception))
+    check("tools produced metrics", len(at.metric) >= 1, f"metrics={len(at.metric)}")
 
 print("\n==== UI APPTEST:",
       "ALL PASSED" if not failures else f"FAILURES: {failures}", "====")

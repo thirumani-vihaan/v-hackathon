@@ -26,6 +26,26 @@ COLLECTION_NAME = "safety_manual"
 _MODEL = "all-MiniLM-L6-v2"
 
 
+def _prefer_offline_embeddings() -> None:
+    """If the MiniLM model is already cached, avoid HuggingFace network checks.
+
+    This prevents multi-second startup hangs (and offline crashes) from the hub
+    'is there an update?' HEAD request, while still allowing a first-time
+    download when the model is not yet cached. Does not affect Gemini calls.
+    """
+    if os.environ.get("HF_HUB_OFFLINE") or os.environ.get("TRANSFORMERS_OFFLINE"):
+        return
+    cache = os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub",
+                         "models--sentence-transformers--all-MiniLM-L6-v2")
+    hf_home = os.environ.get("HF_HOME")
+    if hf_home:
+        cache = os.path.join(hf_home, "hub",
+                             "models--sentence-transformers--all-MiniLM-L6-v2")
+    if os.path.isdir(cache):
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
+
 def _debug_on() -> bool:
     return os.environ.get("KNOWLEDGE_DEBUG", "").strip() in ("1", "true", "True")
 
@@ -36,6 +56,7 @@ def _llm_on() -> bool:
 
 def _get_embedding_function():
     try:
+        _prefer_offline_embeddings()
         from chromadb.utils.embedding_functions import (
             SentenceTransformerEmbeddingFunction,
         )
