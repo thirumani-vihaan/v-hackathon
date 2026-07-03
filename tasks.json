@@ -1,0 +1,164 @@
+[
+  {
+    "id": "T001",
+    "title": "Folders and __init__.py created",
+    "deps": [],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T001.py",
+    "note": "passed"
+  },
+  {
+    "id": "T002",
+    "title": "Core imports validated",
+    "deps": [
+      "T001"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T002.py",
+    "note": "passed"
+  },
+  {
+    "id": "T003",
+    "title": "utils/sensor_simulator.py",
+    "deps": [
+      "T002"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T003.py",
+    "note": "passed"
+  },
+  {
+    "id": "T004",
+    "title": "utils/gemini_vision.py safe fallback",
+    "deps": [
+      "T002"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T004.py",
+    "note": "passed"
+  },
+  {
+    "id": "T005",
+    "title": "agents/vision_agent.py",
+    "deps": [
+      "T004"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T005.py",
+    "note": "passed"
+  },
+  {
+    "id": "T006",
+    "title": "agents/compliance_agent.py deterministic",
+    "deps": [
+      "T003"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T006.py",
+    "note": "passed"
+  },
+  {
+    "id": "T007",
+    "title": "agents/knowledge_agent.py RAG citations",
+    "deps": [
+      "T014"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T007.py",
+    "note": "passed"
+  },
+  {
+    "id": "T008",
+    "title": "agents/safety_agent.py compound scoring",
+    "deps": [
+      "T003"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T008.py",
+    "note": "passed"
+  },
+  {
+    "id": "T009",
+    "title": "agents/orchestrator.py LangGraph routing",
+    "deps": [
+      "T005",
+      "T006",
+      "T007",
+      "T008"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T009.py",
+    "attempts": 1,
+    "note": "passed"
+  },
+  {
+    "id": "T010",
+    "title": "utils/report_generator.py PDF report",
+    "deps": [
+      "T009"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T010.py",
+    "note": "passed"
+  },
+  {
+    "id": "T011",
+    "title": "ui/app.py streamlit 4 tabs + folium map",
+    "deps": [
+      "T009"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T011.py",
+    "note": "passed"
+  },
+  {
+    "id": "T012",
+    "title": "tests/test_schema_contracts.py",
+    "deps": [
+      "T002"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T012.py",
+    "note": "passed"
+  },
+  {
+    "id": "T013",
+    "title": "tests/test_all.py (>=14 tests)",
+    "deps": [
+      "T009"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T013.py",
+    "note": "passed"
+  },
+  {
+    "id": "T014",
+    "title": "knowledge_base/build_db.py",
+    "deps": [
+      "T002"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T014.py",
+    "note": "passed"
+  },
+  {
+    "id": "T015",
+    "title": "main.py run_vizag_scenario asserts CRITICAL + risk>=80",
+    "deps": [
+      "T009"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T015.py",
+    "note": "passed"
+  },
+  {
+    "id": "T016",
+    "title": "utils/demo_runner.py DemoRunner.run_phases",
+    "deps": [
+      "T009"
+    ],
+    "status": "done",
+    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T016.py",
+    "note": "passed"
+  }
+]
