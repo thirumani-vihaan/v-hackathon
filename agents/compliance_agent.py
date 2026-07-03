@@ -128,6 +128,10 @@ class ComplianceAgent:
                 error=str(e),
             )
 
+    def check(self, compliance_input: ComplianceInput) -> ComplianceResult:
+        """Primary entry point; alias of evaluate(). Returns a ComplianceResult."""
+        return self.evaluate(compliance_input)
+
 
 if __name__ == "__main__":
     from utils.sensor_simulator import vizag_critical_reading

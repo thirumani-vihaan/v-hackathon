@@ -94,6 +94,11 @@ def generate_report(result: OrchestratorResult, output_path: str = _DEFAULT_OUT)
     return output_path
 
 
+def generate_pdf_report(result: OrchestratorResult, output_path: str = _DEFAULT_OUT) -> str:
+    """Primary entry point; alias of generate_report(). Returns the output path."""
+    return generate_report(result, output_path)
+
+
 if __name__ == "__main__":
     from schema import SafetyAlert
     r = OrchestratorResult(request_id="demo", input_type="sensor",

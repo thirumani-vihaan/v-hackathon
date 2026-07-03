@@ -11,6 +11,10 @@ from schema import SensorInput, SafetyAlert
 
 
 class SafetyAgent:
+    def process(self, sensor_input: SensorInput, vision=None) -> SafetyAlert:
+        """Primary entry point; alias of assess(). Returns a SafetyAlert."""
+        return self.assess(sensor_input, vision)
+
     def assess(self, sensor_input: SensorInput, vision=None) -> SafetyAlert:
         try:
             reading = sensor_input.reading

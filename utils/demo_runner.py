@@ -3,8 +3,8 @@
 Phase 1 (safe): nominal readings -> low risk (< 40).
 Phase 2 (escalated): ramping readings -> high risk (>= 70 at the peak).
 
-run_phases() returns a dict with 'safe_results' and 'escalated_results', each a
-list of OrchestratorResult objects.
+run_phases() returns a tuple (safe_results, escalated_results), each a list of
+OrchestratorResult objects.
 """
 import os
 import sys
@@ -69,17 +69,17 @@ class DemoRunner:
         )
         return self.orchestrator.run(oi)
 
-    def run_phases(self) -> dict:
+    def run_phases(self):
+        """Return a tuple (safe_results, escalated_results), each a list of
+        OrchestratorResult objects. Safe readings stay low-risk (<50);
+        escalated readings ramp up to a high peak (>=70)."""
         safe_results = [self._run_reading(r, []) for r in _safe_readings(3)]
         escalated_results = [self._run_reading(r, ["hot_work"])
                              for r in _escalated_readings(3)]
-        return {
-            "safe_results": safe_results,
-            "escalated_results": escalated_results,
-        }
+        return (safe_results, escalated_results)
 
 
 if __name__ == "__main__":
-    res = DemoRunner().run_phases()
-    print("safe risks:", [r.safety.risk_score for r in res["safe_results"]])
-    print("escalated risks:", [r.safety.risk_score for r in res["escalated_results"]])
+    safe, escalated = DemoRunner().run_phases()
+    print("safe risks:", [r.safety.risk_score for r in safe])
+    print("escalated risks:", [r.safety.risk_score for r in escalated])

@@ -22,12 +22,22 @@ from log_progress import log_progress  # noqa: E402
 MAX_ATTEMPTS = 3
 
 
+def _child_env():
+    """Force UTF-8 stdio so acceptance scripts that print Unicode (e.g. arrows)
+    don't crash on the Windows cp1252 console."""
+    env = os.environ.copy()
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    return env
+
+
 def run_one(task):
     tid = task["id"]
     cmd = task["acceptance"]
     print(f"\n=== running {tid}: {task['title']}")
     print(f"    acceptance: {cmd}")
-    proc = subprocess.run(cmd, shell=True, cwd=_ROOT, capture_output=True, text=True)
+    proc = subprocess.run(cmd, shell=True, cwd=_ROOT, capture_output=True, text=True,
+                          env=_child_env())
     ok = proc.returncode == 0
     tail_out = proc.stdout[-1200:]
     tail_err = proc.stderr[-1200:]

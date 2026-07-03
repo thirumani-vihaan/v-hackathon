@@ -21,7 +21,7 @@ from agents.orchestrator import Orchestrator  # noqa: E402
 from utils.sensor_simulator import vizag_critical_reading  # noqa: E402
 
 
-def run_vizag_scenario() -> dict:
+def run_vizag_scenario() -> "object":
     reading = vizag_critical_reading()
     orch = Orchestrator()
     oi = OrchestratorInput(
@@ -36,19 +36,16 @@ def run_vizag_scenario() -> dict:
     assert highest == "CRITICAL", f"expected CRITICAL, got {highest}"
     assert risk >= 80, f"expected risk >= 80, got {risk}"
 
-    summary = {
-        "request_id": result.request_id,
-        "zone": reading.zone,
-        "risk_score": risk,
-        "highest_severity": highest,
-        "compliance_pass": result.compliance.pass_status if result.compliance else None,
-        "violations": [v.rule_id for v in result.compliance.violations]
-        if result.compliance else [],
-        "recommended_action": result.safety.recommended_action
-        if result.safety else None,
-    }
-    return summary
+    return result
 
 
 if __name__ == "__main__":
-    print(run_vizag_scenario())
+    r = run_vizag_scenario()
+    print({
+        "request_id": r.request_id,
+        "risk_score": r.safety.risk_score if r.safety else None,
+        "highest_severity": r.compliance.highest_severity if r.compliance else None,
+        "compliance_pass": r.compliance.pass_status if r.compliance else None,
+        "violations": [v.rule_id for v in r.compliance.violations] if r.compliance else [],
+        "recommended_action": r.safety.recommended_action if r.safety else None,
+    })

@@ -101,6 +101,26 @@ def analyze_image(image_path: str) -> VisionResult:
         return _fallback(image_path, error=str(e))
 
 
+def analyze_safety_image(image_path: str) -> dict:
+    """Dict-shaped wrapper around analyze_image (for callers wanting plain JSON).
+
+    The canonical result is still the VisionResult dataclass; this helper serializes
+    it. Keys: hazards (list of dicts), summary (str), source (str), error (str|None),
+    timestamp (str). Never raises.
+    """
+    result = analyze_image(image_path)
+    return {
+        "hazards": [
+            {"type": h.type, "confidence": h.confidence, "bbox": h.bbox}
+            for h in result.hazards
+        ],
+        "summary": result.summary,
+        "source": result.source,
+        "error": result.error,
+        "timestamp": result.timestamp,
+    }
+
+
 def verify_api_key() -> tuple:
     """Return (ok: bool, message: str). Makes a tiny real API call if key present."""
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()

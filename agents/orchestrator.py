@@ -156,6 +156,10 @@ class Orchestrator:
             error=final.get("error"),
         )
 
+    def process(self, orch_input: OrchestratorInput) -> OrchestratorResult:
+        """Primary entry point; alias of run(). Returns an OrchestratorResult."""
+        return self.run(orch_input)
+
 
 if __name__ == "__main__":
     from utils.sensor_simulator import vizag_critical_reading

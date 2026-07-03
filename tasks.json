@@ -4,8 +4,9 @@
     "title": "Folders and __init__.py created",
     "deps": [],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T001.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T001",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T002",
@@ -14,8 +15,9 @@
       "T001"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T002.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T002",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T003",
@@ -24,8 +26,9 @@
       "T002"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T003.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T003",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T004",
@@ -34,8 +37,9 @@
       "T002"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T004.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T004",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T005",
@@ -44,8 +48,9 @@
       "T004"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T005.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T005",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T006",
@@ -54,8 +59,9 @@
       "T003"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T006.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T006",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T007",
@@ -64,8 +70,9 @@
       "T014"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T007.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T007",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T008",
@@ -74,8 +81,9 @@
       "T003"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T008.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T008",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T009",
@@ -87,8 +95,8 @@
       "T008"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T009.py",
-    "attempts": 1,
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T009",
+    "attempts": 0,
     "note": "passed"
   },
   {
@@ -98,8 +106,9 @@
       "T009"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T010.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T010",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T011",
@@ -108,8 +117,9 @@
       "T009"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T011.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T011",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T012",
@@ -118,8 +128,9 @@
       "T002"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T012.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T012",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T013",
@@ -128,8 +139,9 @@
       "T009"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T013.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T013",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T014",
@@ -138,8 +150,9 @@
       "T002"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T014.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T014",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T015",
@@ -148,8 +161,9 @@
       "T009"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T015.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T015",
+    "note": "passed",
+    "attempts": 0
   },
   {
     "id": "T016",
@@ -158,7 +172,8 @@
       "T009"
     ],
     "status": "done",
-    "acceptance": "venv\\Scripts\\python.exe tools\\acceptance\\T016.py",
-    "note": "passed"
+    "acceptance": "venv\\Scripts\\python.exe tools\\accept.py T016",
+    "note": "passed",
+    "attempts": 0
   }
 ]

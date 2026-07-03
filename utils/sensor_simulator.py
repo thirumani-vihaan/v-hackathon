@@ -9,6 +9,64 @@ PERMIT_TYPES = ["hot_work", "confined_space", "electrical", "excavation", "cold_
                 "general", "working_at_height"]
 
 
+def generate_sensor_reading(scenario: str = "normal") -> dict:
+    """Return a scenario-shaped SensorReading as a dict.
+
+    This is a simulator helper (not an agent method). The canonical shape is still
+    the schema dataclass: we build a SensorReading and serialize via to_dict(),
+    so the returned dict always maps cleanly back to SensorReading(**d).
+
+    Supported scenarios: 'normal', 'gas_spike', 'confined_space', 'electrical'.
+    """
+    ts = datetime.utcnow().isoformat()
+    if scenario == "gas_spike":
+        reading = SensorReading(
+            gas_ppm=round(random.uniform(85, 130), 1),
+            temp_c=round(random.uniform(28, 38), 1),
+            oxygen_pct=20.9,
+            humidity_pct=55.0,
+            permit_type="hot_work",
+            worker_count=random.randint(1, 4),
+            zone="Zone-B-Process",
+            timestamp=ts,
+        )
+    elif scenario == "confined_space":
+        reading = SensorReading(
+            gas_ppm=round(random.uniform(5, 20), 1),
+            temp_c=round(random.uniform(24, 32), 1),
+            oxygen_pct=round(random.uniform(17.0, 19.3), 2),
+            humidity_pct=60.0,
+            permit_type="confined_space",
+            worker_count=random.randint(1, 2),
+            zone="Zone-C-Confined",
+            timestamp=ts,
+            rescue_team_present=True,
+        )
+    elif scenario == "electrical":
+        reading = SensorReading(
+            gas_ppm=round(random.uniform(5, 20), 1),
+            temp_c=round(random.uniform(24, 32), 1),
+            oxygen_pct=20.9,
+            humidity_pct=round(random.uniform(86, 97), 1),
+            permit_type="electrical",
+            worker_count=random.randint(1, 3),
+            zone="Zone-D-Substation",
+            timestamp=ts,
+        )
+    else:  # "normal" (default)
+        reading = SensorReading(
+            gas_ppm=round(random.uniform(10, 35), 1),
+            temp_c=round(random.uniform(24, 34), 1),
+            oxygen_pct=round(random.uniform(20.5, 21.0), 2),
+            humidity_pct=round(random.uniform(40, 60), 1),
+            permit_type="inspection",
+            worker_count=random.randint(1, 3),
+            zone="Zone-A-Tank-Farm",
+            timestamp=ts,
+        )
+    return reading.to_dict()
+
+
 def normal_reading(zone: str = "Zone-A-Tank-Farm") -> SensorReading:
     """A safe, nominal reading (no rules should fire)."""
     return SensorReading(

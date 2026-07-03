@@ -16,6 +16,10 @@ class VisionAgent:
                 error=str(e),
             )
 
+    def process(self, vision_input: VisionInput) -> VisionResult:
+        """Primary entry point; alias of analyze(). Returns a VisionResult."""
+        return self.analyze(vision_input)
+
 
 if __name__ == "__main__":
     print(VisionAgent().analyze(VisionInput(image_path="data/test_safety_image.jpg")))
