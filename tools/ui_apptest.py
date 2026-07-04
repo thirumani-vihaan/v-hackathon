@@ -32,10 +32,10 @@ def fresh():
     return at
 
 
-# 1) initial render, no exception, 6 tabs
+# 1) initial render, no exception, 7 tabs
 at = fresh()
 check("initial render no exception", not at.exception, str(at.exception))
-check("has 6 tabs", len(at.tabs) == 6, f"tabs={len(at.tabs)}")
+check("has 7 tabs", len(at.tabs) == 7, f"tabs={len(at.tabs)}")
 
 # 2) Dashboard: Run once
 at = fresh()

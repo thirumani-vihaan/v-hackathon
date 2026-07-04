@@ -1,8 +1,8 @@
 """Train a tiny, reproducible offline hazard classifier (CPU, seconds).
 
-Unlike AgriBloom's 91k-image EfficientNet that needs a GPU and an external
-dataset download, this trains a lightweight logistic-regression classifier on
-*synthetic* fire/smoke vs. normal imagery in a few seconds on CPU, using the
+This trains a lightweight logistic-regression classifier on
+*synthetic* fire/smoke vs. normal imagery in a few seconds on CPU (no GPU and no
+external dataset download), using the
 exact same HSV histogram features as utils/local_vision.features(). The result
 (models/hazard_model.npz) is loaded by local_vision to blend a learned
 fire/smoke probability into the offline detector.

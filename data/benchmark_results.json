@@ -1,0 +1,123 @@
+{
+  "dataset_size": 36,
+  "incidents": 26,
+  "safe": 10,
+  "seed": 42,
+  "detectors": {
+    "single_high": {
+      "incidents": 26,
+      "safe": 10,
+      "true_positives": 16,
+      "false_positives": 0,
+      "true_negatives": 10,
+      "raw_false_negatives": 10,
+      "operational_false_negatives": 21,
+      "false_negative_rate_raw": 0.385,
+      "false_negative_rate_operational": 0.808,
+      "false_alarm_rate": 0.0,
+      "median_lead_minutes": 17.0,
+      "detections_with_lead": 8
+    },
+    "single_low": {
+      "incidents": 26,
+      "safe": 10,
+      "true_positives": 26,
+      "false_positives": 10,
+      "true_negatives": 0,
+      "raw_false_negatives": 0,
+      "operational_false_negatives": 0,
+      "false_negative_rate_raw": 0.0,
+      "false_negative_rate_operational": 0.0,
+      "false_alarm_rate": 1.0,
+      "median_lead_minutes": 31.0,
+      "detections_with_lead": 26
+    },
+    "compound": {
+      "incidents": 26,
+      "safe": 10,
+      "true_positives": 22,
+      "false_positives": 0,
+      "true_negatives": 10,
+      "raw_false_negatives": 4,
+      "operational_false_negatives": 24,
+      "false_negative_rate_raw": 0.154,
+      "false_negative_rate_operational": 0.923,
+      "false_alarm_rate": 0.0,
+      "median_lead_minutes": 7.0,
+      "detections_with_lead": 22
+    },
+    "compound_pred": {
+      "incidents": 26,
+      "safe": 10,
+      "true_positives": 26,
+      "false_positives": 0,
+      "true_negatives": 10,
+      "raw_false_negatives": 0,
+      "operational_false_negatives": 0,
+      "false_negative_rate_raw": 0.0,
+      "false_negative_rate_operational": 0.0,
+      "false_alarm_rate": 0.0,
+      "median_lead_minutes": 19.0,
+      "detections_with_lead": 26
+    }
+  },
+  "by_scenario_kind": {
+    "asphyxiation_incident": {
+      "n": 4,
+      "type": "incident",
+      "single_high": 0.0,
+      "single_low": 0.0,
+      "compound": 1.0,
+      "compound_pred": 0.0
+    },
+    "conjunction_incident": {
+      "n": 10,
+      "type": "incident",
+      "single_high": 1.0,
+      "single_low": 0.0,
+      "compound": 0.0,
+      "compound_pred": 0.0
+    },
+    "idlh_incident": {
+      "n": 6,
+      "type": "incident",
+      "single_high": 1.0,
+      "single_low": 0.0,
+      "compound": 0.0,
+      "compound_pred": 0.0
+    },
+    "maintenance_shift_incident": {
+      "n": 6,
+      "type": "incident",
+      "single_high": 0.333,
+      "single_low": 0.0,
+      "compound": 0.0,
+      "compound_pred": 0.0
+    },
+    "safe_stable": {
+      "n": 6,
+      "type": "safe",
+      "single_high": 0.0,
+      "single_low": 1.0,
+      "compound": 0.0,
+      "compound_pred": 0.0
+    },
+    "safe_transient": {
+      "n": 4,
+      "type": "safe",
+      "single_high": 0.0,
+      "single_low": 1.0,
+      "compound": 0.0,
+      "compound_pred": 0.0
+    }
+  },
+  "headline": {
+    "single_sensor_operational_false_negative_rate": 0.808,
+    "compound_predictive_operational_false_negative_rate": 0.0,
+    "false_negative_reduction_pct": 80.8,
+    "compound_median_lead_minutes": 19.0,
+    "single_high_false_alarm_rate": 0.0,
+    "single_low_false_alarm_rate": 1.0,
+    "compound_pred_false_alarm_rate": 0.0
+  }
+}

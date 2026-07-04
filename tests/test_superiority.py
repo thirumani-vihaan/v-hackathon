@@ -1,4 +1,4 @@
-"""Tests for the AgriBloom-superiority modules (all offline, deterministic)."""
+"""Tests for the offline capability modules (all offline, deterministic)."""
 import os
 import sys
 

@@ -1,6 +1,6 @@
 """Seasonal industrial-safety calendar (deterministic, offline).
 
-Analogue of AgriBloom's crop calendar: maps the Indian calendar's seasons
+Maps the Indian calendar's seasons
 (summer / monsoon / post-monsoon / winter) to the process-safety hazards that
 spike in each, plus a daily shift-risk note. No LLM, no network.
 """
@@ -68,6 +68,32 @@ def shift_note(hour: Optional[int] = None) -> str:
     if 14 <= h < 22:
         return "Evening shift: fading light — verify area lighting before elevated work."
     return "Night shift: reduced staffing & alertness — buddy system for confined entry."
+
+
+def is_shift_changeover(timestamp=None, window_min: int = 30) -> bool:
+    """True if `timestamp` falls within `window_min` minutes of a shift boundary.
+
+    Shifts change at 06:00, 14:00 and 22:00 (the day/evening/night handovers used by
+    shift_note). Changeover windows are documented supervision blind spots: outgoing and
+    incoming crews overlap, permits are handed off, and hazardous conditions can go
+    unwatched — a pattern PS1 calls out explicitly.
+    """
+    if timestamp is None:
+        dt = datetime.now()
+    elif isinstance(timestamp, str):
+        try:
+            dt = datetime.fromisoformat(timestamp)
+        except ValueError:
+            return False
+    else:
+        dt = timestamp
+    minutes = dt.hour * 60 + dt.minute
+    for boundary in (6 * 60, 14 * 60, 22 * 60):
+        diff = abs(minutes - boundary)
+        diff = min(diff, 24 * 60 - diff)  # wrap around midnight
+        if diff <= window_min:
+            return True
+    return False
 
 
 if __name__ == "__main__":

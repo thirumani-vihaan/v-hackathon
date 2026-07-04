@@ -47,6 +47,21 @@ class SafetyAgent:
                         triggered.append(f"vision:{h.type} (+20)")
                         break
 
+            # Contextual compound escalations (additive, same pattern as the vision
+            # escalation above). These capture the PS1-named compound conditions a base
+            # gas/oxygen threshold cannot see: maintenance activity amid accumulating gas
+            # in a confined space (the entrapment mechanism behind the Vizag coke-oven
+            # deaths), and the supervision blind spot at shift changeover. Gated on
+            # explicit operational context so ordinary readings score exactly as before.
+            zone_l = (reading.zone or "").lower()
+            confined = "confined" in zone_l or "confined_space" in permits
+            if "maintenance" in permits and reading.gas_ppm > 50 and confined:
+                score += 25
+                triggered.append("maintenance+gas>50 in confined space (+25)")
+            if "shift_changeover" in permits and reading.gas_ppm > 50:
+                score += 15
+                triggered.append("shift-changeover supervision gap during gas (+15)")
+
             score = min(score, 100)
 
             if score >= 80:

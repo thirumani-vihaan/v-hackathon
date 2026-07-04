@@ -1,8 +1,7 @@
 """OutputAgent — the 5th pipeline stage (format / consolidate / brief).
 
-AgriBloom's architecture ends with an Output agent that formats the final
-response and produces voice output. IndustrialSafetyAI matches that with an
-OutputAgent that:
+The pipeline ends with an OutputAgent that formats the final response and
+produces voice output:
   * format()   -> validates/returns the aggregated OrchestratorResult (schema-safe
                   pass-through; the orchestrator calls this as its final stage).
   * briefing() -> a plain-language, speakable incident briefing consolidating

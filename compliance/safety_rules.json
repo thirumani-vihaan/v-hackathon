@@ -4,7 +4,7 @@
     "name": "Elevated Toxic Gas Concentration",
     "severity": "HIGH",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 5.2.1",
+    "oisd_reference": "OISD-STD-105 Sec 5.2.1 | Factory Act 1948 §36 | DGMS(Tech) Circular 05",
     "message": "Toxic/combustible gas concentration exceeds 50 ppm. Increase ventilation and continuous gas monitoring required before work continues.",
     "conditions": { "all": [ { "field": "gas_ppm", "op": ">", "value": 50 } ] }
   },
@@ -13,7 +13,7 @@
     "name": "Critical Toxic Gas Concentration",
     "severity": "CRITICAL",
     "action": "BLOCK",
-    "oisd_reference": "OISD-STD-105 Sec 5.2.3",
+    "oisd_reference": "OISD-STD-105 Sec 5.2.3 | Factory Act 1948 §36 & §41B | DGMS(Tech) Circular 05",
     "message": "Gas concentration exceeds 100 ppm. STOP WORK immediately, evacuate the zone and isolate the source.",
     "conditions": { "all": [ { "field": "gas_ppm", "op": ">", "value": 100 } ] }
   },
@@ -22,7 +22,7 @@
     "name": "Oxygen Enrichment Hazard",
     "severity": "HIGH",
     "action": "BLOCK",
-    "oisd_reference": "OISD-STD-105 Sec 6.1.4",
+    "oisd_reference": "OISD-STD-105 Sec 6.1.4 | Factory Act 1948 §37 | DGMS(Tech) Circular 09",
     "message": "Oxygen level above 23.5% creates fire/explosion risk. Purge the enriched atmosphere before entry or hot work.",
     "conditions": { "all": [ { "field": "oxygen_pct", "op": ">", "value": 23.5 } ] }
   },
@@ -31,7 +31,7 @@
     "name": "Oxygen Deficiency Warning Band",
     "severity": "HIGH",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 6.1.2",
+    "oisd_reference": "OISD-STD-105 Sec 6.1.2 | Factory Act 1948 §36 | DGMS(Tech) Circular 08",
     "message": "Oxygen between 18.0% and 19.5% is below the safe entry threshold. Ventilate and re-test before allowing continued occupancy.",
     "conditions": { "all": [ { "field": "oxygen_pct", "op": ">=", "value": 18.0 }, { "field": "oxygen_pct", "op": "<", "value": 19.5 } ] }
   },
@@ -40,7 +40,7 @@
     "name": "Critical Oxygen Deficiency",
     "severity": "CRITICAL",
     "action": "BLOCK",
-    "oisd_reference": "OISD-STD-105 Sec 6.1.1",
+    "oisd_reference": "OISD-STD-105 Sec 6.1.1 | Factory Act 1948 §36 | DGMS(Tech) Circular 08",
     "message": "Oxygen below 18.0% is immediately dangerous to life. Evacuate and do not enter without SCBA.",
     "conditions": { "all": [ { "field": "oxygen_pct", "op": "<", "value": 18.0 } ] }
   },
@@ -49,7 +49,7 @@
     "name": "Confined Space Entry Without Standby Rescue Team",
     "severity": "CRITICAL",
     "action": "BLOCK",
-    "oisd_reference": "OISD-STD-105 Sec 7.4.2",
+    "oisd_reference": "OISD-STD-105 Sec 7.4.2 | Factory Act 1948 §36(3)(4) | DGMS(Tech) Circular 08",
     "message": "Confined space entry is prohibited without a standby rescue team. Deploy rescue team before entry.",
     "conditions": { "all": [ { "permit": "confined_space", "op": "present" }, { "field": "rescue_team_present", "op": "==", "value": false } ] }
   },
@@ -58,7 +58,7 @@
     "name": "High Temperature During Hot Work",
     "severity": "HIGH",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 8.3.1",
+    "oisd_reference": "OISD-STD-105 Sec 8.3.1 | Factory Act 1948 §13 | DGMS Heat-Stress Guideline 2016",
     "message": "Ambient temperature above 45C during hot work increases heat-stress and ignition risk. Schedule frequent breaks and monitor workers.",
     "conditions": { "all": [ { "field": "temp_c", "op": ">", "value": 45 }, { "permit": "hot_work", "op": "present" } ] }
   },
@@ -67,7 +67,7 @@
     "name": "Extreme Ambient Heat",
     "severity": "HIGH",
     "action": "BLOCK",
-    "oisd_reference": "OISD-STD-105 Sec 8.3.4",
+    "oisd_reference": "OISD-STD-105 Sec 8.3.4 | Factory Act 1948 §13 | DGMS Heat-Stress Guideline 2016",
     "message": "Ambient temperature above 55C exceeds safe working limits. Suspend work until conditions improve.",
     "conditions": { "all": [ { "field": "temp_c", "op": ">", "value": 55 } ] }
   },
@@ -76,7 +76,7 @@
     "name": "Hot Work With Detectable Gas",
     "severity": "HIGH",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 8.1.2",
+    "oisd_reference": "OISD-STD-105 Sec 8.1.2 | Factory Act 1948 §37 | DGMS(Tech) Circular 05",
     "message": "Detectable gas present during hot work. Re-test atmosphere and maintain fire watch before proceeding.",
     "conditions": { "all": [ { "permit": "hot_work", "op": "present" }, { "field": "gas_ppm", "op": ">", "value": 10 } ] }
   },
@@ -85,7 +85,7 @@
     "name": "Hot Work With Flammable Gas Present",
     "severity": "CRITICAL",
     "action": "BLOCK",
-    "oisd_reference": "OISD-STD-105 Sec 8.1.1",
+    "oisd_reference": "OISD-STD-105 Sec 8.1.1 | Factory Act 1948 §37(1) | DGMS(Tech) Circular 05",
     "message": "Hot work with gas concentration above 50 ppm poses explosion risk. Cancel hot work permit and eliminate the gas source.",
     "conditions": { "all": [ { "permit": "hot_work", "op": "present" }, { "field": "gas_ppm", "op": ">", "value": 50 } ] }
   },
@@ -94,7 +94,7 @@
     "name": "Confined Space Overcrowding",
     "severity": "MEDIUM",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 7.4.5",
+    "oisd_reference": "OISD-STD-105 Sec 7.4.5 | Factory Act 1948 §36 | DGMS(Tech) Circular 08",
     "message": "More than 2 workers inside a confined space complicates rescue. Limit simultaneous entrants.",
     "conditions": { "all": [ { "permit": "confined_space", "op": "present" }, { "field": "worker_count", "op": ">", "value": 2 } ] }
   },
@@ -103,7 +103,7 @@
     "name": "Work Without Active Permit",
     "severity": "HIGH",
     "action": "BLOCK",
-    "oisd_reference": "OISD-STD-105 Sec 4.1.1",
+    "oisd_reference": "OISD-STD-105 Sec 4.1.1 | Factory Act 1948 §7A | DGMS Permit-to-Work Guideline",
     "message": "Workers present in the zone with no active work permit. Issue and validate a permit before any work.",
     "conditions": { "all": [ { "field": "worker_count", "op": ">", "value": 0 }, { "permit_count": 0 } ] }
   },
@@ -112,7 +112,7 @@
     "name": "Electrical Work In High Humidity",
     "severity": "MEDIUM",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 9.2.3",
+    "oisd_reference": "OISD-STD-105 Sec 9.2.3 | Factory Act 1948 §36A | DGMS(Tech) Circular 03",
     "message": "Humidity above 85% during electrical work increases shock risk. Verify insulation and use ELCB protection.",
     "conditions": { "all": [ { "permit": "electrical", "op": "present" }, { "field": "humidity_pct", "op": ">", "value": 85 } ] }
   },
@@ -121,7 +121,7 @@
     "name": "Sub-Atmospheric Pressure Hazard",
     "severity": "MEDIUM",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 10.1.2",
+    "oisd_reference": "OISD-STD-105 Sec 10.1.2 | Factory Act 1948 §41B | DGMS(Tech) Circular 11",
     "message": "Pressure below 0.90 bar may indicate a vacuum condition or leak. Investigate before continued work.",
     "conditions": { "all": [ { "field": "pressure_bar", "op": "<", "value": 0.9 } ] }
   },
@@ -130,7 +130,7 @@
     "name": "Overpressure Condition",
     "severity": "HIGH",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 10.1.5",
+    "oisd_reference": "OISD-STD-105 Sec 10.1.5 | Factory Act 1948 §31 | DGMS(Tech) Circular 11",
     "message": "Pressure above 2.0 bar detected. Verify relief systems and depressurize before intrusive work.",
     "conditions": { "all": [ { "field": "pressure_bar", "op": ">", "value": 2.0 } ] }
   },
@@ -139,7 +139,7 @@
     "name": "Excavation Crew Size Limit",
     "severity": "LOW",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 11.3.2",
+    "oisd_reference": "OISD-STD-105 Sec 11.3.2 | Factory Act 1948 §40 | DGMS Excavation Safety Guideline",
     "message": "Excavation with more than 6 workers requires an additional supervisor and shoring review.",
     "conditions": { "all": [ { "permit": "excavation", "op": "present" }, { "field": "worker_count", "op": ">", "value": 6 } ] }
   },
@@ -148,7 +148,7 @@
     "name": "Cold Work Near Detectable Gas",
     "severity": "MEDIUM",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 5.2.2",
+    "oisd_reference": "OISD-STD-105 Sec 5.2.2 | Factory Act 1948 §36 | DGMS(Tech) Circular 05",
     "message": "Gas concentration above 30 ppm during cold work. Increase monitoring frequency and ventilation.",
     "conditions": { "all": [ { "field": "gas_ppm", "op": ">", "value": 30 } ] }
   },
@@ -157,7 +157,7 @@
     "name": "High Personnel Density In Zone",
     "severity": "LOW",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 4.3.1",
+    "oisd_reference": "OISD-STD-105 Sec 4.3.1 | Factory Act 1948 §38 | DGMS Emergency-Egress Guideline",
     "message": "More than 10 workers in a single zone. Confirm muster capacity and emergency egress.",
     "conditions": { "all": [ { "field": "worker_count", "op": ">", "value": 10 } ] }
   },
@@ -166,7 +166,7 @@
     "name": "Unrecognized Permit Type",
     "severity": "LOW",
     "action": "WARN",
-    "oisd_reference": "OISD-STD-105 Sec 4.1.3",
+    "oisd_reference": "OISD-STD-105 Sec 4.1.3 | Factory Act 1948 §7A | DGMS Permit-to-Work Guideline",
     "message": "Permit type is not one of the recognized categories. Verify permit classification with the issuing authority.",
     "conditions": { "all": [ { "field": "permit_type", "op": "not_in", "value": ["hot_work", "confined_space", "electrical", "excavation", "cold_work", "general", "working_at_height"] } ] }
   },
@@ -175,7 +175,7 @@
     "name": "Gas Displacement Of Oxygen",
     "severity": "CRITICAL",
     "action": "BLOCK",
-    "oisd_reference": "OISD-STD-105 Sec 6.2.1",
+    "oisd_reference": "OISD-STD-105 Sec 6.2.1 | Factory Act 1948 §36 | DGMS(Tech) Circular 08",
     "message": "Elevated gas (>40 ppm) combined with oxygen below 19.5% indicates oxygen displacement. Evacuate immediately and ventilate the zone.",
     "conditions": { "all": [ { "field": "gas_ppm", "op": ">", "value": 40 }, { "field": "oxygen_pct", "op": "<", "value": 19.5 } ] }
   }

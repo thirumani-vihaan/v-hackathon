@@ -17,6 +17,8 @@ _RULES_PATH = os.path.join(os.path.dirname(_HERE), "compliance", "safety_rules.j
 
 _SEVERITY_ORDER = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
 
+REGULATORY_FRAMEWORKS = ("OISD", "Factory Act", "DGMS")
+
 
 def _load_rules(path: str = _RULES_PATH):
     with open(path, "r", encoding="utf-8") as f:
@@ -131,6 +133,17 @@ class ComplianceAgent:
     def check(self, compliance_input: ComplianceInput) -> ComplianceResult:
         """Primary entry point; alias of evaluate(). Returns a ComplianceResult."""
         return self.evaluate(compliance_input)
+
+    def regulatory_coverage(self) -> dict:
+        """Report how many rules cite each regulatory framework (OISD / Factory Act /
+        DGMS). Backs PS1's 'regulatory compliance coverage' evaluation dimension."""
+        cov = {fw: 0 for fw in REGULATORY_FRAMEWORKS}
+        for rule in self.rules:
+            ref = rule.get("oisd_reference", "")
+            for fw in REGULATORY_FRAMEWORKS:
+                if fw in ref:
+                    cov[fw] += 1
+        return {"total_rules": len(self.rules), "frameworks": cov}
 
 
 if __name__ == "__main__":

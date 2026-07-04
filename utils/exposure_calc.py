@@ -1,7 +1,6 @@
 """Deterministic industrial-hygiene calculator (no LLM, no network).
 
-Analogue of AgriBloom's fertilizer/NPK calculator, but for confined-space and
-process-safety engineering: OSHA PEL/STEL exposure ratios, %LEL for flammables,
+A confined-space and process-safety engineering calculator: OSHA PEL/STEL exposure ratios, %LEL for flammables,
 required dilution ventilation (CFM / air-changes) and a conservative evacuation
 radius. All numbers come from published exposure limits and gas-law math.
 """

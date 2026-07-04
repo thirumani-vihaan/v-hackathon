@@ -1,6 +1,6 @@
 """Emergency response directory + nearest-facility finder (deterministic).
 
-Analogue of AgriBloom's helpline & KVK finder, adapted to an industrial estate:
+An emergency response directory for an industrial estate:
 a 24x7 helpline banner, an emergency contact directory, and a haversine-based
 "nearest response facility" finder that ranks hospitals / fire / mutual-aid
 centres by distance from a given plant zone. Offline, no LLM.

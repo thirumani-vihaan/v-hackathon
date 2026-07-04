@@ -1,7 +1,7 @@
 """Browser-based text-to-speech (voice output) via Web Speech API.
 
-AgriBloom has server-side TTS voice output; we do it client-side using the
-browser's built-in SpeechSynthesis engine. This needs ZERO extra Python
+Voice output is done client-side using the browser's built-in SpeechSynthesis
+engine. This needs ZERO extra Python
 dependencies, works offline, and speaks all supported languages. Returns an
 HTML snippet to embed with streamlit.components.v1.html(...).
 """
