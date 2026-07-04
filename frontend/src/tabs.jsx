@@ -37,9 +37,26 @@ function MapView({ colors, coords, facilities }) {
   }, [colors, coords, facilities]);
   return (
     <div>
-      <div ref={el} style={{ height: 460, borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }} />
+      <div ref={el} style={{ height: 560, borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }} />
       <button className="btn" style={{ marginTop: 10 }} onClick={() => map.current && map.current.locate({ setView: true, maxZoom: 15 })}>📍 Auto-locate me</button>
     </div>
+  );
+}
+
+function GraphViz({ graph }) {
+  const nodes = graph.nodes, edges = graph.edges;
+  const W = 360, H = 300, cx = W / 2, cy = H / 2, R = 118;
+  const pos = {};
+  nodes.forEach((n, i) => { const a = (i / nodes.length) * 2 * Math.PI - Math.PI / 2; pos[n.id] = [cx + R * Math.cos(a), cy + R * Math.sin(a)]; });
+  const color = (k) => (k === "zone" ? "#f1c40f" : k === "permit" ? "#22d3ee" : "#8b98ad");
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%" }}>
+      {edges.map((e, i) => { const a = pos[e.source], b = pos[e.target]; if (!a || !b) return null;
+        return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(150,170,200,0.18)" strokeWidth="1" />; })}
+      {nodes.map((n) => { const p = pos[n.id]; const c = color(n.kind);
+        return <g key={n.id}><circle cx={p[0]} cy={p[1]} r={n.kind === "zone" ? 9 : 5} fill={c} stroke={c} />
+          <title>{n.id} ({n.kind})</title></g>; })}
+    </svg>
   );
 }
 
@@ -68,6 +85,14 @@ export function ZoneMapTab({ r, permits }) {
             <div className="cmp-row" key={z}><span className="cmp-tag">{z}</span>
               <span className="cmp-val" style={{ color: HEX[c] }}>{LABEL[c]}</span></div>))}
           <div className="sub" style={{ marginTop: 6 }}>{d.graph.nodes.length} graph nodes · {d.graph.edges.length} edges</div></div>}
+        {d && <div className="card">
+          <h3>Equipment · Permit · Zone Knowledge Graph</h3>
+          <GraphViz graph={d.graph} />
+          <div className="sub" style={{ display: "flex", gap: 14, marginTop: 4 }}>
+            <span><span style={{ color: "#f1c40f" }}>●</span> zone</span>
+            <span><span style={{ color: "#8b98ad" }}>●</span> equipment</span>
+            <span><span style={{ color: "#22d3ee" }}>●</span> permit</span>
+          </div></div>}
       </div>
     </div>
   );
@@ -76,30 +101,42 @@ export function ZoneMapTab({ r, permits }) {
 /* ---------------- Knowledge chat ---------------- */
 export function KnowledgeTab() {
   const [q, setQ] = useState("When must a hot work permit be cancelled?");
-  const [hist, setHist] = useState([]);
+  const [hist, setHist] = useState(() => { try { return JSON.parse(localStorage.getItem("isa_chat") || "[]"); } catch { return []; } });
   const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+  useEffect(() => { try { localStorage.setItem("isa_chat", JSON.stringify(hist.slice(-30))); } catch {} }, [hist]);
+  useEffect(() => { if (endRef.current) endRef.current.scrollIntoView({ behavior: "smooth" }); }, [hist, loading]);
   const ask = async () => {
-    if (!q.trim()) return;
-    setLoading(true);
-    try { const res = await api.knowledge(q); setHist((h) => [...h, { q, ...res }]); setQ(""); }
-    catch { setHist((h) => [...h, { q, answer: "Backend error (first call loads the RAG model; retry in a moment).", sources: [], confidence: 0 }]); }
+    if (!q.trim() || loading) return;
+    const question = q; setQ(""); setLoading(true);
+    const t0 = performance.now();
+    try { const res = await api.knowledge(question);
+      setHist((h) => [...h, { q: question, ...res, ms: Math.round(performance.now() - t0), ts: Date.now() }]); }
+    catch { setHist((h) => [...h, { q: question, answer: "Backend error (first call loads the RAG model; retry in a moment).", sources: [], confidence: 0, ts: Date.now() }]); }
     setLoading(false);
   };
+  const clear = () => { setHist([]); try { localStorage.removeItem("isa_chat"); } catch {} };
+  const hhmm = (ts) => ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
   return (
-    <div className="card" style={{ maxWidth: 900, margin: "0 auto" }}>
-      <h3>Grounded Safety Knowledge · RAG over OISD / Factory Act / DGMS</h3>
-      <div className="chat">
+    <div className="card" style={{ maxWidth: 920, margin: "0 auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h3 style={{ margin: 0 }}>Grounded Safety Knowledge · RAG over OISD / Factory Act / DGMS</h3>
+        {hist.length > 0 && <button className="btn" onClick={clear}>Clear history</button>}
+      </div>
+      <div className="chat" style={{ maxHeight: 460, overflowY: "auto", marginTop: 14, paddingRight: 6 }}>
+        {hist.length === 0 && <div className="sub">Ask a question — your conversation is saved on this device automatically.</div>}
         {hist.map((m, i) => (<React.Fragment key={i}>
           <div className="msg q">{m.q}</div>
           <div className="msg a">{m.answer}
-            <div className="cite">confidence {(m.confidence || 0).toFixed(2)} · sources: {(m.sources || []).map((s) => `${s.filename} p.${s.page}`).join(", ") || "none"} · {m.answered_from_documents ? "grounded in documents" : "general knowledge"}
+            <div className="cite">confidence {(m.confidence || 0).toFixed(2)} · sources: {(m.sources || []).map((s) => `${s.filename} p.${s.page}`).join(", ") || "none"} · {m.answered_from_documents ? "grounded" : "general"}{m.ms ? ` · ${m.ms} ms` : ""}{m.ts ? ` · ${hhmm(m.ts)}` : ""}
               {" · "}<a style={{ color: "var(--cyan)", cursor: "pointer" }} onClick={() => speak(m.answer, "English")}>🔊 read</a></div>
           </div></React.Fragment>))}
-        {loading && <div className="msg a sub">Retrieving &amp; synthesizing… (first query loads the embedding model)</div>}
+        {loading && <div className="msg a sub">Retrieving &amp; synthesizing…</div>}
+        <div ref={endRef} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <input type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ask()} placeholder="Ask a safety question…" />
-        <button className="btn primary" onClick={ask} disabled={loading}>Ask</button>
+        <button className="btn primary" onClick={ask} disabled={loading}>{loading ? "…" : "Ask"}</button>
       </div>
     </div>
   );
@@ -139,14 +176,15 @@ export function VisionTab() {
         <label className="btn">⬆ Upload image<input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files[0] && analyze(e.target.files[0])} /></label>
         {!cam ? <button className="btn" onClick={openCam}>📷 Open camera</button>
               : <><button className="btn primary" onClick={capture}>Capture</button><button className="btn" onClick={closeCam}>Cancel</button></>}
+        {(img || res) && !cam && <button className="btn" onClick={() => { setImg(null); setRes(null); }}>✕ Clear</button>}
       </div>
       <div className="row2">
-        <div>
+        <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) analyze(f); }}>
           {cam && <video ref={video} style={{ width: "100%", borderRadius: 10, background: "#000" }} muted playsInline />}
           {!cam && img && <div className="imgwrap"><img src={img} alt="scan" />
             {res && res.hazards && res.hazards.map((h, i) => { const [x1, y1, x2, y2] = h.bbox;
               return <div key={i} className="bbox" style={{ left: `${x1}%`, top: `${y1}%`, width: `${x2 - x1}%`, height: `${y2 - y1}%` }}><span>{h.type} {(h.confidence * 100).toFixed(0)}%</span></div>; })}</div>}
-          {!cam && !img && <div className="dropzone">Upload an image or open the camera to detect hazards.</div>}
+          {!cam && !img && <div className="dropzone">Drag &amp; drop, upload an image, or open the camera to detect hazards.</div>}
         </div>
         <div>
           <h3>Detected Hazards</h3>
@@ -154,7 +192,10 @@ export function VisionTab() {
           {res && !loading && <>
             <div className="sub" style={{ marginBottom: 8 }}>Source: {res.source} · {res.summary}</div>
             {res.hazards && res.hazards.length ? res.hazards.map((h, i) => (
-              <div className="list-item" key={i}><b>{h.type.replace(/_/g, " ")}</b> <span className="muted">— confidence {(h.confidence * 100).toFixed(0)}%</span></div>
+              <div className="bar" key={i}>
+                <div className="top"><span>{h.type.replace(/_/g, " ")}</span><b>{(h.confidence * 100).toFixed(0)}%</b></div>
+                <div className="track"><div style={{ width: `${h.confidence * 100}%`, background: h.confidence >= 0.6 ? "#e74c3c" : "#e67e22" }} /></div>
+              </div>
             )) : <div className="sub">No hazards detected.</div>}</>}
         </div>
       </div>
@@ -168,12 +209,18 @@ export function EmergencyTab({ r, permits }) {
   const [lang, setLang] = useState("Telugu");
   const [disp, setDisp] = useState(null);
   const [brief, setBrief] = useState(null);
+  const [loading, setLoading] = useState(false);
   useEffect(() => { api.languages().then(setLangs).catch(() => {}); }, []);
+  useEffect(() => () => stopSpeaking(), []);  // stop voice when leaving the tab
   const run = async () => {
+    if (loading) return;
+    setLoading(true);
     const rd = readingOf(r);
-    const d = await api.dispatch(rd, permits, lang).catch(() => null);
-    const b = await api.briefing(rd, permits, lang).catch(() => null);
-    setDisp(d); setBrief(b);
+    const [d, b] = await Promise.all([
+      api.dispatch(rd, permits, lang).catch(() => null),
+      api.briefing(rd, permits, lang).catch(() => null),
+    ]);
+    setDisp(d); setBrief(b); setLoading(false);
     if (d && d.message) speak(d.message, lang);
   };
   return (
@@ -183,7 +230,7 @@ export function EmergencyTab({ r, permits }) {
           <h3>Emergency Response Orchestrator</h3>
           <div className="ctrl"><label>Alert language</label>
             <select value={lang} onChange={(e) => setLang(e.target.value)}>{langs.map((l) => <option key={l}>{l}</option>)}</select></div>
-          <button className="btn primary" style={{ width: "100%" }} onClick={run}>🚨 Simulate Dispatch &amp; Speak Alert</button>
+          <button className="btn primary" style={{ width: "100%" }} onClick={run} disabled={loading}>{loading ? "Dispatching…" : "🚨 Simulate Dispatch & Speak Alert"}</button>
           <div className="sub" style={{ marginTop: 10 }}>Uses current sensor state ({r.zone}, gas {r.gas_ppm} ppm). Voice: {voiceInfo(lang)}.</div>
           <button className="btn" style={{ width: "100%", marginTop: 8 }} onClick={stopSpeaking}>⏹ Stop voice</button>
         </div>

@@ -31,7 +31,8 @@ from schema import (SensorReading, SensorInput, ComplianceInput, QueryInput,  # 
 from agents.safety_agent import SafetyAgent  # noqa: E402
 from agents.compliance_agent import ComplianceAgent  # noqa: E402
 from agents.output_agent import OutputAgent  # noqa: E402
-from utils.interventions import rank_interventions  # noqa: E402
+from utils.interventions import rank_interventions as _rule_interventions  # noqa: E402,F401
+from utils.risk_model import graduated_risk, rank_interventions  # noqa: E402
 from utils.confidence import assess_confidence  # noqa: E402
 from utils.limit_check import limit_utilisation  # noqa: E402
 from utils.baseline_detector import PROFILES as _SINGLE_PROFILES  # noqa: E402
@@ -113,6 +114,20 @@ def health():
     return {"status": "ok", "knowledge_loaded": _knowledge is not None}
 
 
+@app.on_event("startup")
+def _prewarm_knowledge():
+    """Load the heavy RAG stack in a background thread so the API starts instantly but
+    the first /api/knowledge query is fast instead of paying a ~16s cold load."""
+    import threading
+
+    def _warm():
+        try:
+            _get_knowledge()
+        except Exception:
+            pass
+    threading.Thread(target=_warm, daemon=True).start()
+
+
 @app.post("/api/scan")
 def scan(req: ScanRequest):
     try:
@@ -123,6 +138,7 @@ def scan(req: ScanRequest):
     alert = _safety.assess(SensorInput(reading=reading, active_permits=permits))
     comp = _compliance.evaluate(ComplianceInput(sensor=reading, active_permits=permits))
     conf = assess_confidence(reading)
+    grad = graduated_risk(reading, permits)
     iv = rank_interventions(reading, permits)
     limits = limit_utilisation(reading)
 
@@ -136,9 +152,12 @@ def scan(req: ScanRequest):
         single.append("temperature")
 
     result = {
-        "risk_score": alert.risk_score,
+        "risk_score": grad["score"],
+        "band": grad["band"],
+        "contributions": grad["contributions"],
+        "recommended_action": grad["recommended_action"],
+        "rule_score": alert.risk_score,
         "triggered_rules": alert.triggered_rules,
-        "recommended_action": alert.recommended_action,
         "zone": alert.zone,
         "compliance": {
             "pass_status": comp.pass_status,
@@ -151,9 +170,9 @@ def scan(req: ScanRequest):
         "interventions": iv,
         "limits": limits,
         "single_sensor": {"fired": single, "count": len(single), "total": 3,
-                          "compound_fires": alert.risk_score >= 50},
+                          "compound_fires": grad["score"] >= 50},
     }
-    append_event({"type": "api_scan", "risk_score": alert.risk_score,
+    append_event({"type": "api_scan", "risk_score": grad["score"],
                   "severity": comp.highest_severity, "zone": reading.zone})
     return result
 

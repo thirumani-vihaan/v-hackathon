@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { band, pctColor, Gauge } from "./lib.jsx";
 import { ZoneMapTab, KnowledgeTab, VisionTab, EmergencyTab, ToolsTab, BenchmarkTab, IntelligenceTab } from "./tabs.jsx";
+import { stopSpeaking } from "./voice";
 
 export const ALL_PERMITS = ["hot_work", "confined_space", "maintenance", "electrical", "shift_changeover", "cold_work"];
 export const ZONES = ["Zone-A-Tank-Farm", "Zone-B-Process", "Zone-C-Confined", "Zone-D-Substation"];
@@ -43,7 +44,7 @@ export default function App() {
       </div>
       <div className="wrap">
         <div className="tabs">
-          {TABS.map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}
+          {TABS.map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => { stopSpeaking(); setTab(t); }}>{t}</button>)}
         </div>
         {tab === "Dashboard" && <Dashboard {...shared} />}
         {tab === "Zone Map" && <ZoneMapTab r={r} permits={permits} />}
@@ -88,6 +89,7 @@ function Dashboard({ r, set, permits, togglePermit, applyPreset }) {
       <div className="col">
         {err && <div className="card err">{err}</div>}
         <RiskHero scan={scan} b={b} latency={latency} />
+        {scan && <Contributions data={scan} />}
         {scan && <div className="row2"><CompoundCompare scan={scan} /><Confidence conf={scan.confidence} /></div>}
         {scan && <div className="row2"><Interventions iv={scan.interventions} /><Limits limits={scan.limits} /></div>}
         {scan && <Violations comp={scan.compliance} />}
@@ -192,6 +194,22 @@ function RiskHero({ scan, b, latency }) {
       <div className="band" style={{ color: b.color }}>{b.name}</div>
       <div className="meter"><div style={{ width: `${score}%`, background: b.color }} /></div>
       <div className="action">{scan ? scan.recommended_action : "Adjust the controls to run a live compound-risk assessment."}</div>
+    </div>
+  );
+}
+
+function Contributions({ data }) {
+  const max = Math.max(...data.contributions.map((c) => c.points), 1);
+  return (
+    <div className="card">
+      <h3>Risk Contribution Breakdown</h3>
+      {data.contributions.length ? data.contributions.map((c) => (
+        <div className="bar" key={c.factor}>
+          <div className="top"><span>{c.factor} <span className="muted">— {c.detail}</span></span><b>+{c.points}</b></div>
+          <div className="track"><div style={{ width: `${(c.points / max) * 100}%`, background: "#22d3ee" }} /></div>
+        </div>
+      )) : <div className="sub">No active risk factors — conditions nominal.</div>}
+      <div className="sub" style={{ marginTop: 8 }}>Continuous compound model · auditable rule-engine score {data.rule_score}/100 · triggers: {data.triggered_rules.length ? data.triggered_rules.join(", ") : "none"}</div>
     </div>
   );
 }
