@@ -12,9 +12,11 @@ class VisionAgent:
             if result is not None and result.source == "gemini":
                 return result
             # Offline: real OpenCV pixel analysis ONLY — never canned generic hazards.
-            # An empty result ("no visual hazards above threshold") is the honest output
-            # when the heuristic detector finds nothing.
-            return local_vision.detect(vision_input.image_path)
+            # Surface WHY Gemini wasn't used so the UI can explain the fallback.
+            cv = local_vision.detect(vision_input.image_path)
+            if result is not None and getattr(result, "error", None):
+                cv.error = result.error
+            return cv
         except Exception:
             try:
                 return local_vision.detect(vision_input.image_path)

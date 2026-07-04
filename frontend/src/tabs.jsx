@@ -153,6 +153,19 @@ export function KnowledgeTab() {
 }
 
 /* ---------------- Vision (upload + camera) ---------------- */
+const HAZ_ICON = {
+  no_helmet: "⛑️", smoke_fire: "🔥", unauthorized_person: "🚷",
+  unsafe_equipment: "🛠️", gas_leak_visual: "☁️", electrical_hazard: "⚡",
+};
+function visionReason(err) {
+  const e = (err || "").toLowerCase();
+  if (!err) return "Using the on-device detector.";
+  if (e.includes("gemini_api_key")) return "No Gemini API key configured — using the on-device detector.";
+  if (e.includes("429") || e.includes("quota") || e.includes("rate")) return "Gemini rate limit reached — using the on-device detector.";
+  if (e.includes("all models") || e.includes("unavailable") || e.includes("503")) return "Gemini temporarily unavailable — using the on-device detector.";
+  if (e.includes("offline")) return "Running fully offline — on-device detector.";
+  return "Gemini not available — using the on-device detector.";
+}
 export function VisionTab() {
   const [img, setImg] = useState(null);
   const [res, setRes] = useState(null);
@@ -181,7 +194,7 @@ export function VisionTab() {
 
   return (
     <div className="card" style={{ maxWidth: 1000, margin: "0 auto" }}>
-      <h3>Vision Hazard Inspection · offline OpenCV + trained model</h3>
+      <h3>Vision Hazard Inspection</h3>
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         <label className="btn">⬆ Upload image<input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files[0] && analyze(e.target.files[0])} /></label>
         {!cam ? <button className="btn" onClick={openCam}>📷 Open camera</button>
@@ -197,17 +210,29 @@ export function VisionTab() {
           {!cam && !img && <div className="dropzone">Drag &amp; drop, upload an image, or open the camera to detect hazards.</div>}
         </div>
         <div>
-          <h3>Detected Hazards</h3>
-          {loading && <div className="sub">Analyzing…</div>}
+          <h3>Vision Analysis</h3>
+          {loading && <div className="sub" style={{ display: "flex", alignItems: "center", gap: 8 }}><span className="spin" />Analyzing…</div>}
           {res && !loading && <>
-            <div className="sub" style={{ marginBottom: 8 }}>Source: {res.source} · {res.summary}</div>
-            {res.source === "fallback" && <div className="sub" style={{ marginBottom: 8, color: "#f1c40f" }}>Offline heuristic detector (no vision API key) — precision-tuned; a vision key enables full-accuracy scene understanding.</div>}
-            {res.hazards && res.hazards.length ? res.hazards.map((h, i) => (
-              <div className="bar" key={i}>
-                <div className="top"><span>{h.type.replace(/_/g, " ")}</span><b>{(h.confidence * 100).toFixed(0)}%</b></div>
-                <div className="track"><div style={{ width: `${h.confidence * 100}%`, background: h.confidence >= 0.6 ? "#e74c3c" : "#e67e22" }} /></div>
-              </div>
-            )) : <div className="sub">No hazards detected.</div>}</>}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+              {res.source === "gemini"
+                ? <span className="tag" style={{ background: "rgba(46,204,113,0.15)", color: "#2ecc71", fontSize: 11 }}>🛰 Gemini AI Vision</span>
+                : <span className="tag" style={{ background: "rgba(241,196,15,0.15)", color: "#f1c40f", fontSize: 11 }}>⚙ Offline detector</span>}
+              <span className="sub">{res.source === "gemini" ? "cloud scene understanding" : "on-device pixel analysis"}</span>
+            </div>
+            {res.source !== "gemini" && <div className="sub" style={{ marginBottom: 10, color: "#f1c40f" }}>Reason: {visionReason(res.error)}</div>}
+            <div style={{ background: "var(--panel2)", border: "1px solid var(--border)", borderRadius: 10, padding: "10px 12px", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{res.summary}</div>
+            {res.hazards && res.hazards.length ? <>
+              <div className="sub" style={{ marginBottom: 8 }}>{res.hazards.length} hazard{res.hazards.length > 1 ? "s" : ""} detected:</div>
+              {res.hazards.map((h, i) => {
+                const sev = h.confidence >= 0.7 ? "#e74c3c" : h.confidence >= 0.5 ? "#e67e22" : "#f1c40f";
+                return (
+                  <div className="iv" key={i} style={{ borderColor: `${sev}55` }}>
+                    <div className="head"><span className="act">{HAZ_ICON[h.type] || "⚠"} {h.type.replace(/_/g, " ")}</span><span className="delta" style={{ color: sev }}>{(h.confidence * 100).toFixed(0)}%</span></div>
+                    <div className="bar" style={{ margin: "6px 0 0" }}><div className="track"><div style={{ width: `${h.confidence * 100}%`, background: sev }} /></div></div>
+                  </div>);
+              })}
+            </> : <div style={{ color: "#2ecc71", fontSize: 14, display: "flex", alignItems: "center", gap: 8, padding: "8px 0" }}>✓ No safety hazards detected.</div>}
+          </>}
         </div>
       </div>
     </div>
@@ -343,26 +368,38 @@ export function BenchmarkTab() {
   useEffect(() => { api.benchmark().then(setB).catch(() => setB(null)); }, []);
   if (!b) return <div className="card sub">Loading benchmark…</div>;
   const h = b.headline;
+  const D = b.detectors;
   const names = { single_high: "Single-sensor (evac-grade)", single_low: "Single-sensor (sensitive)", compound: "Compound (reactive)", compound_pred: "Compound + prediction (ours)" };
   const pc = (x) => (x == null ? "—" : `${Math.round(x * 100)}%`);
+  const miss = (d) => (d ? `${d.operational_false_negatives} / ${d.incidents}` : "—");
   return (
     <div className="col">
+      <div className="card">
+        <h3>How We Tested</h3>
+        <div className="sub" style={{ lineHeight: 1.65 }}>
+          We generate <b>{b.dataset_size} physics-labeled scenarios</b> ({b.incidents} incident / {b.safe} safe) as minute-by-minute sensor time-series.
+          {" "}<b>Ground truth is detector-independent</b> — an "incident" is defined purely by published physical limits (H₂S IDLH 100 ppm, oxygen &lt; 16%, or combustible gas + an ignition source in a confined space), never by our own score.
+          {" "}We then replay every scenario through <b>conventional single-sensor alarms</b> (both evacuation-grade and sensitive setpoints) and through <b>our compound + predictive engine</b>, and count per detector: incidents missed, false alarms on safe scenarios, and warning lead time.
+          {" "}A detection that arrives with less lead than the ~10-minute confined-space evacuation window is counted as an <b>operational miss</b> — a late alert doesn't save the worker. Results are stable across random seeds.
+        </div>
+      </div>
       <div className="row2">
         <div className="card">
-          <h3>Headline: False-Negative Reduction</h3>
+          <h3>Result: Fewer Missed Incidents</h3>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
             <span className="big-num" style={{ color: "#2ecc71" }}>−{Math.round(h.false_negative_reduction_pct)}<span style={{ fontSize: 16 }}>pts</span></span>
-            <span className="sub">missed incidents (operational)</span></div>
-          <div className="cmp-row"><span className="cmp-tag">Single-sensor</span><span className="tag bad">{pc(h.single_sensor_operational_false_negative_rate)} miss</span></div>
-          <div className="cmp-row"><span className="cmp-tag">Compound + prediction</span><span className="tag ok">{pc(h.compound_predictive_operational_false_negative_rate)} miss</span></div>
+            <span className="sub">operational miss rate vs single-sensor</span></div>
+          <div className="cmp-row"><span className="cmp-tag">Single-sensor missed</span><span className="tag bad">{miss(D.single_high)} incidents</span></div>
+          <div className="cmp-row"><span className="cmp-tag">Compound + prediction missed</span><span className="tag ok">{miss(D.compound_pred)} incidents</span></div>
           <div className="cmp-row"><span className="cmp-tag">Median early warning</span><span className="cmp-val">{h.compound_median_lead_minutes} min</span></div>
-          <div className="sub" style={{ marginTop: 6 }}>{b.incidents} incident / {b.safe} safe physics-labeled scenarios.</div>
+          <div className="sub" style={{ marginTop: 8 }}>Counts are on this {b.dataset_size}-scenario benchmark. Real-world miss rates depend on sensor coverage and calibration and will be non-zero — the point is the large gap vs single-sensor baselines.</div>
         </div>
         <div className="card">
           <h3>Detector Comparison</h3>
-          <table><thead><tr><th>Detector</th><th>Miss (op)</th><th>False alarm</th><th>Lead</th></tr></thead>
+          <table><thead><tr><th>Detector</th><th>Missed</th><th>False alarm</th><th>Lead</th></tr></thead>
             <tbody>{Object.keys(names).map((k) => { const d = b.detectors[k]; return (
-              <tr key={k}><td>{names[k]}</td><td className="mono">{pc(d.false_negative_rate_operational)}</td><td className="mono">{pc(d.false_alarm_rate)}</td><td className="mono">{d.median_lead_minutes ?? "—"}</td></tr>); })}</tbody></table>
+              <tr key={k}><td>{names[k]}</td><td className="mono">{miss(d)}</td><td className="mono">{pc(d.false_alarm_rate)}</td><td className="mono">{d.median_lead_minutes ?? "—"}</td></tr>); })}</tbody></table>
+          <div className="sub" style={{ marginTop: 8 }}>"Missed" = operational misses out of {b.incidents} incident scenarios.</div>
         </div>
       </div>
       <div className="card">
