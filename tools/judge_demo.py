@@ -82,6 +82,21 @@ def main():
         print(f"  Top violation     : {v.rule_id} {v.name}")
         print(f"  Regulatory refs   : {v.oisd_reference}")
 
+    # confidence + counterfactual interventions
+    from utils.confidence import assess_confidence
+    from utils.interventions import rank_interventions
+    conf = assess_confidence(reading)
+    print(f"  Assessment conf.  : {conf['confidence']:.0%} ({conf['label']}) "
+          f"[coverage {conf['coverage']:.0%} / decisiveness {conf['decisiveness']:.0%} "
+          f"/ freshness {conf['freshness']:.0%}]")
+    iv = rank_interventions(reading, ["hot_work"])
+    if iv["recommended"]:
+        r = iv["recommended"]
+        print(f"  Best intervention : {r['action']} -> risk "
+              f"{r['risk_before']} to {r['risk_after']} (-{r['risk_reduction']})")
+    if iv["residual_action"]:
+        print(f"  Residual action   : {iv['residual_action']}")
+
     _rule("4. PERMIT-PROXIMITY INTELLIGENCE (knowledge graph)")
     state = {
         "Zone-B-Process": {"gas_ppm": 88, "permits": []},
@@ -102,6 +117,13 @@ def main():
     for m in ii.similar_incidents(reading.gas_ppm, reading.oxygen_pct, reading.zone,
                                   ["hot_work"], top_k=2):
         print(f"   - {m['id']} (score {m['match_score']}): {m['description']}")
+
+    _rule("6. TAMPER-EVIDENT AUDIT TRAIL (SHA-256 hash chain)")
+    from utils.audit_logger import verify_chain
+    vc = verify_chain()
+    status = "INTACT" if vc["valid"] else f"BROKEN at entry {vc['broken_at']}"
+    print(f"  Evidence log: {vc['entries']} entries, {vc['chained']} hash-linked "
+          f"-> chain {status}")
 
     print("\n" + "=" * 72)
     print("Fully offline. Auditable. It would have flagged Vizag hours early.")
