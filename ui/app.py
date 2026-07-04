@@ -244,6 +244,8 @@ with tab_dash:
         run_live = st.button("⏱ Run live stream")
     with run_cols[2]:
         duration = st.slider("Live duration (s)", 5, 60, 15, step=5)
+        replay_speed = st.selectbox("Replay speed", [1, 2, 5, 10],
+                                    format_func=lambda x: f"{x}×", index=0)
 
     result_box = st.container()
     metric_ph = st.empty()
@@ -379,9 +381,9 @@ with tab_dash:
                 mm[1].metric("Gas ppm", f"{live.gas_ppm:.0f}")
                 mm[2].metric("Time to critical", eta_txt)
             chart_ph.line_chart(df[["risk"]])
-            time.sleep(1)
+            time.sleep(1.0 / float(replay_speed))
         st.session_state["last_result"] = res
-        st.success(f"Live stream complete ({duration}s).")
+        st.success(f"Live stream complete ({duration}s at {replay_speed}× replay).")
 
     if st.session_state["risk_history"]:
         st.line_chart(pd.DataFrame({"risk": st.session_state["risk_history"]}))
