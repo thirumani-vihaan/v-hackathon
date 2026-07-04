@@ -263,6 +263,42 @@ with tab_dash:
                     st.write(f"- `{v.rule_id}` {v.severity} — {v.name} "
                              f"({v.oisd_reference})")
 
+            # --- Compound vs single-sensor comparison (live, per scan) ---
+            from utils.baseline_detector import PROFILES as _PROFILES
+            _sp = _PROFILES["high_alarm"]
+            _single = []
+            if reading.gas_ppm >= _sp["gas_ppm"]:
+                _single.append("gas")
+            if reading.oxygen_pct < _sp["oxygen_pct"]:
+                _single.append("oxygen")
+            if reading.temp_c >= _sp["temp_c"]:
+                _single.append("temperature")
+            _compound_fires = result.safety.risk_score >= 50
+            cc = st.columns(2)
+            cc[0].metric("Individual sensor alarms", f"{len(_single)} / 3 triggered")
+            cc[1].metric("Compound engine",
+                         f"{result.compliance.highest_severity or 'nominal'} "
+                         f"· {result.safety.risk_score}/100")
+            if _compound_fires and not _single:
+                st.error("⚠️ Without compound intelligence, **no single-sensor alarm "
+                         "would have fired** — this is the blind spot that kills.")
+
+            # --- Counterfactual intervention engine ---
+            from utils.interventions import rank_interventions
+            _iv = rank_interventions(reading, st.session_state["d_permits"])
+            if _iv["recommended"]:
+                rec = _iv["recommended"]
+                st.markdown("**🛠️ Recommended interventions** (ranked by risk removed):")
+                st.success(f"➡️ **{rec['action']}** — risk {rec['risk_before']} → "
+                           f"{rec['risk_after']} (−{rec['risk_reduction']})")
+                for c in _iv["interventions"][:4]:
+                    if c["risk_reduction"] > 0:
+                        st.write(f"- {c['action']}: {c['risk_before']} → "
+                                 f"{c['risk_after']} (−{c['risk_reduction']}) — "
+                                 f"{c['description']}")
+            if _iv["residual_action"]:
+                st.error("🚨 " + _iv["residual_action"])
+
     if run_once:
         reading = reading_from_state()
         res = run_sensor(reading, st.session_state["d_permits"])
