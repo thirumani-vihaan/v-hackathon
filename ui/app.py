@@ -138,6 +138,15 @@ with st.sidebar:
     st.subheader("Evidence trail")
     _recent = read_last_n(5)
     st.write(f"{len(read_last_n(10000))} events logged")
+    if st.button("🔐 Verify audit-log integrity", key="verify_chain"):
+        from utils.audit_logger import verify_chain
+        _vc = verify_chain()
+        if _vc["valid"]:
+            st.success(f"✅ Tamper-evident chain intact — {_vc['chained']} "
+                       f"hash-linked entries verified.")
+        else:
+            st.error(f"⚠️ Chain broken at entry {_vc['broken_at']} — evidence "
+                     f"may have been altered.")
     if st.button("Download Evidence ZIP", key="side_zip"):
         zp = export_zip()
         try:

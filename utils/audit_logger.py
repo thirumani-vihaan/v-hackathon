@@ -6,6 +6,7 @@ the graph stays pure and deterministic.
 """
 import os
 import json
+import hashlib
 from datetime import datetime
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,6 +14,11 @@ _DEFAULT_PATH = os.path.join(_ROOT, "data", "evidence_log.jsonl")
 
 # keys that must never be written, even if a caller passes them through
 _FORBIDDEN = ("gemini_api_key", "api_key", "apikey", "authorization", "token")
+
+# SHA-256 hash-chain genesis anchor. Each entry seals the previous entry's hash,
+# making the evidence log tamper-evident — a requirement for OISD/PESO-grade audit
+# trails. Altering any past entry breaks every subsequent hash.
+_GENESIS = "0" * 64
 
 
 def _sanitize(obj):
@@ -24,17 +30,63 @@ def _sanitize(obj):
     return obj
 
 
+def _compute_hash(body: dict) -> str:
+    canonical = json.dumps(body, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _last_hash(path: str) -> str:
+    last = read_last_n(1, path)
+    if last and isinstance(last[-1], dict) and last[-1].get("entry_hash"):
+        return last[-1]["entry_hash"]
+    return _GENESIS
+
+
 def append_event(event: dict, path: str = _DEFAULT_PATH) -> None:
-    """Append one sanitized JSON event as a line. Never raises."""
+    """Append one sanitized, hash-chained JSON event as a line. Never raises."""
     try:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         payload = _sanitize(dict(event))
         payload.setdefault("timestamp", datetime.utcnow().isoformat())
+        payload["prev_hash"] = _last_hash(path)
+        payload["entry_hash"] = _compute_hash(payload)
         with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps(payload, ensure_ascii=False) + "\n")
     except Exception:
         # audit logging must never break the caller
         pass
+
+
+def verify_chain(path: str = _DEFAULT_PATH) -> dict:
+    """Verify the SHA-256 hash chain. Legacy entries without a hash are tolerated
+    (counted but not chained). Returns {valid, entries, chained, broken_at}."""
+    try:
+        if not os.path.isfile(path):
+            return {"valid": True, "entries": 0, "chained": 0, "broken_at": None}
+        with open(path, "r", encoding="utf-8") as f:
+            lines = [ln for ln in f.read().splitlines() if ln.strip()]
+        expected_prev = _GENESIS
+        chained = 0
+        for i, ln in enumerate(lines):
+            try:
+                entry = json.loads(ln)
+            except Exception:
+                return {"valid": False, "entries": len(lines), "chained": chained,
+                        "broken_at": i}
+            if "entry_hash" not in entry:
+                continue  # legacy, unchained entry
+            body = {k: v for k, v in entry.items() if k != "entry_hash"}
+            if (entry.get("prev_hash") != expected_prev
+                    or entry["entry_hash"] != _compute_hash(body)):
+                return {"valid": False, "entries": len(lines), "chained": chained,
+                        "broken_at": i}
+            expected_prev = entry["entry_hash"]
+            chained += 1
+        return {"valid": True, "entries": len(lines), "chained": chained,
+                "broken_at": None}
+    except Exception as e:  # noqa: BLE001
+        return {"valid": False, "entries": 0, "chained": 0, "broken_at": None,
+                "error": str(e)}
 
 
 def read_last_n(n: int = 100, path: str = _DEFAULT_PATH) -> list:
