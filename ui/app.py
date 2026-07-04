@@ -253,6 +253,17 @@ with tab_dash:
             eta_txt = ("0 min (CRITICAL)" if eta == 0.0
                        else "—" if eta is None else f"{eta} min")
             m[3].metric("Time to critical", eta_txt)
+
+            # --- Assessment confidence (coverage / decisiveness / freshness) ---
+            from utils.confidence import assess_confidence
+            _conf = assess_confidence(reading)
+            _badge = {"high": "🟢", "medium": "🟡", "low": "🔴"}[_conf["label"]]
+            st.caption(f"{_badge} Assessment confidence: **{_conf['confidence']:.0%} "
+                       f"({_conf['label']})** — {' '.join(_conf['notes'])}")
+            ccols = st.columns(3)
+            ccols[0].metric("Sensor coverage", f"{_conf['coverage']:.0%}")
+            ccols[1].metric("Signal decisiveness", f"{_conf['decisiveness']:.0%}")
+            ccols[2].metric("Data freshness", f"{_conf['freshness']:.0%}")
             st.write("**Recommended action:**",
                      result.safety.recommended_action)
             st.write("**Triggered rules:**", result.safety.triggered_rules or "none")
