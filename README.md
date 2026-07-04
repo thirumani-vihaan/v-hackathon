@@ -1,190 +1,275 @@
-# 🛡️ IndustrialSafetyAI — Agentic Process-Safety Command Center
+<div align="center">
 
-**Multi-Agent AI for Industrial & Confined-Space Safety** · Vision + Deterministic Compliance + Grounded RAG + Live Dispatch
+# 🛡️ IndustrialSafetyAI
 
-> Point a camera or a gas sensor at a hazard → get a risk score, the exact regulations violated, a grounded expert answer, an evacuation radius, and a spoken multilingual alert — **fully offline if needed.**
+### Agentic Compound-Risk Intelligence for Zero-Harm Industrial Operations
+
+*Fuse gas sensors, permits, CCTV and shift logs into one predictive layer that detects the dangerous **combinations** no single sensor sees — and acts before a fatality, not after.*
+
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-Vite%20SPA-61DAFB?logo=react&logoColor=black)
+![LangGraph](https://img.shields.io/badge/LangGraph-multi--agent-1C3C3C)
+![Tests](https://img.shields.io/badge/tests-139%20pytest%20%2B%2016%20acceptance-2ecc71)
+![Offline](https://img.shields.io/badge/mode-offline--capable-f1c40f)
+
+</div>
 
 ---
 
-## 🎯 Built for Problem Statement 1 — the headline evidence
+## 📌 The problem
 
-PS1's decisive metric is *"reduction in false-negative rate — the metric that actually saves lives."* We measure it, honestly, against single-sensor baselines on a **physics-labeled** scenario dataset (`tools/benchmark.py`, stable across 20 random seeds):
+> India's DGFASLI recorded **6,500+ fatal workplace accidents in FY2023**. In January 2025, **eight workers died** at the Visakhapatnam Steel Plant coke-oven when entrapped gases exploded — a facility that *had* working gas detectors, permits and SCADA. The warning signals existed; **nothing connected them in time.**
+
+The gap is not sensors. It is the missing **intelligence layer** that fuses disparate signals into a real-time, predictive risk picture and acts on it. IndustrialSafetyAI is that layer.
+
+---
+
+## 🎯 The headline result — the metric that saves lives
+
+PS1's decisive metric is *"reduction in false-negative rate."* We measure it honestly on a **physics-labeled** benchmark with **detector-independent ground truth** (`tools/benchmark.py`, stable across random seeds):
 
 | Detector | Missed incidents (operational) | False alarms | Median early warning |
-|---|---|---|---|
-| Single-sensor, evacuation-grade alarms | **~80%** (blind to conjunctions) | ~0% | — |
-| Single-sensor, sensitive alarms | ~0% | **100%** (alarm fatigue) | 31 min |
-| **Compound + prediction (ours)** | **0%** | **~0–3%** | **~18 min** |
+| :-- | :--: | :--: | :--: |
+| Single-sensor · evacuation-grade alarms | **21 / 26** (blind to conjunctions) | ~0% | — |
+| Single-sensor · sensitive alarms | 0 / 26 | **100%** (alarm fatigue) | 31 min |
+| **Compound + prediction (ours)** | **0 / 26** | **~0–3%** | **~18–19 min** |
 
-Single sensors force an impossible trade-off — go blind to sub-threshold conjunctions **or** drown operators in false alarms. Our engine fuses **gas + permit + confinement + maintenance + shift-changeover + trend** to escape it: it catches every incident, early, without crying wolf. That is the exact blind spot that killed eight workers at Visakhapatnam Steel in January 2025.
+> Single sensors force an impossible trade-off — go **blind** to sub-threshold conjunctions, *or* **drown** operators in false alarms. Our engine fuses **gas + permit + confinement + maintenance + shift-changeover + trend** to escape it: it catches every incident on the benchmark, early, without crying wolf.
+>
+> *Counts are on the synthetic benchmark; real-world rates depend on sensor coverage and are non-zero — the point is the large, defensible gap vs single-sensor baselines.*
 
-**PS1 capabilities delivered:**
-- **Compound Risk Detection** — deterministic compound scoring + predictive lead-time forecasting (`utils/forecast.py`); maintenance-in-confined and shift-changeover escalations.
-- **Digital Permit Intelligence + Knowledge Graph** (`utils/knowledge_graph.py`) — flags hot-work/maintenance permits in zones *adjacent* to elevated gas (a graph query no single sensor can answer).
-- **Incident Pattern Intelligence** (`utils/incident_intelligence.py`) — mines a near-miss corpus for recurring, severity-weighted prevention priorities and retrieves incidents similar to the live state.
-- **Emergency Response Orchestrator** — multilingual spoken evacuation, evidence preservation (ZIP + JSONL), auto regulatory incident PDF.
-- **Compliance Audit** — 20 deterministic rules, every one cross-referenced to **OISD + Factory Act 1948 + DGMS**.
-- **Geospatial** — plant-layout risk overlay with a weighted hazard **heatmap** + permit-proximity graph.
+---
 
-Run it yourself: `python -m tools.benchmark`
+## 🏗️ System architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["🖥️ React + Vite SPA (dark command center)"]
+        UI["8 tabs · live scans · Leaflet map · voice · charts"]
+    end
+
+    subgraph Backend["⚡ Warm FastAPI backend  (backend/main.py)"]
+        API["/api/* — ~20ms scans · loads once · lazy heavy stack"]
+    end
+
+    subgraph Core["🧠 Core Python (imported by backend)"]
+        ORCH["LangGraph Orchestrator + 5 agents"]
+        RISK["Graduated + rule compound-risk"]
+        BENCH["Physics benchmark · forecast"]
+        KG["Knowledge graph · incidents"]
+        AUD["SHA-256 hash-chained audit"]
+    end
+
+    subgraph Data["📚 Deterministic + local"]
+        RULES["20 rules · OISD/Factory Act/DGMS"]
+        CHROMA["ChromaDB + MiniLM RAG"]
+        MODEL["offline hazard model (.npz)"]
+    end
+
+    Cloud["☁️ Gemini API (optional)"]
+
+    UI -->|HTTP JSON| API
+    API --> ORCH --> RISK & KG & AUD
+    API --> BENCH
+    ORCH --> RULES & CHROMA & MODEL
+    API -. "if GEMINI_API_KEY set" .-> Cloud
+    Cloud -. "vision + RAG synthesis" .-> API
+    Core -. "auto offline fallback" .-> API
+
+    classDef cloud fill:#1a2a3a,stroke:#22d3ee,color:#e6ecf5;
+    class Cloud cloud;
+```
+
+**Two-tier, hybrid, offline-first.** The React SPA is served by the FastAPI backend at a
+single URL. Gemini adds cloud-grade vision + grounded RAG **when a key is present**; on
+any absence, failure, or rate-limit the system **falls back to the fully-offline path
+automatically** — the pitch is *"cloud-accurate when connected, functional when air-gapped."*
+*(A legacy all-in-one Streamlit app also ships in `ui/app.py`.)*
+
+---
+
+## 🔄 The 5-agent LangGraph pipeline
+
+```mermaid
+flowchart LR
+    IN(["Typed input:<br>image · sensor · query · full_scan"]) --> R{"Orchestrator<br>router"}
+    R -->|image| V["👁️ VisionAgent<br>Gemini → offline OpenCV+model"]
+    R -->|sensor| S["⚠️ SafetyAgent<br>compound risk 0–100"]
+    R -->|sensor| C["📋 ComplianceAgent<br>20 deterministic rules"]
+    R -->|query| K["📚 KnowledgeAgent<br>grounded ChromaDB RAG"]
+    V & S & C & K --> O["🔊 OutputAgent<br>format + multilingual briefing"]
+    O --> RES(["OrchestratorResult<br>typed · auditable"])
+
+    classDef a fill:#141a24,stroke:#22d3ee,color:#e6ecf5;
+    class V,S,C,K,O a;
+```
+
+Contract-first: every agent takes a typed `*Input` dataclass and returns its `*Result`
+dataclass from the **immutable** `schema.py`. Nodes return update dicts only; a single
+failing agent never crashes the run.
+
+---
+
+## ⚙️ A live compound-risk scan
+
+```mermaid
+sequenceDiagram
+    participant U as Operator (SPA)
+    participant B as FastAPI /api/scan
+    participant SA as SafetyAgent (rule)
+    participant RM as risk_model (graduated)
+    participant CA as ComplianceAgent
+    participant EX as confidence · interventions · limits
+
+    U->>B: reading + active permits
+    B->>SA: auditable rule score + triggers
+    B->>RM: continuous 0–100 + per-factor breakdown
+    B->>CA: OISD/Factory Act/DGMS violations
+    B->>EX: confidence, ranked interventions, limit check
+    B-->>U: risk + why + "revoke permit → risk 100→20" + single-vs-compound
+    Note over B: event appended to SHA-256 hash-chained audit log
+```
+
+---
+
+## 🧪 How the benchmark proves it (no test-gaming)
+
+```mermaid
+flowchart TD
+    G["scenario_generator.py<br>physics-labeled time-series"] --> GT{"Ground truth = published limits<br>H₂S IDLH · O₂ below 16% · gas+ignition+confined"}
+    GT --> D1["single-sensor (evac-grade)"]
+    GT --> D2["single-sensor (sensitive)"]
+    GT --> D3["compound (reactive)"]
+    GT --> D4["compound + prediction (ours)"]
+    D1 & D2 & D3 & D4 --> M["metrics: missed / false-alarm / lead<br>(late alert = operational miss)"]
+    M --> OUT([Ground truth is independent of every detector])
+```
 
 ---
 
 ## 🚀 Key capabilities
 
-IndustrialSafetyAI is a production-grade, offline-capable process-safety intelligence platform: a deterministic compound-risk engine, a real offline computer-vision fallback, an industrial-hygiene calculator, and a full audit/evidence trail suitable for a regulated plant.
-
-- **5-agent LangGraph pipeline** — Orchestrator · Vision · Safety · Compliance · Knowledge + an **OutputAgent** formatting stage.
-- **Vision** — Gemini 2.5 with % bounding boxes online; **real OpenCV HSV pixel analysis + a CPU-trained model** (`hazard_model.npz`, trains in seconds, no dataset download) offline.
-- **Deterministic guardrail** — 20 safety rules with **compound risk scoring (0–100)**, no LLM, fully auditable, each cross-referenced to **OISD + Factory Act 1948 + DGMS**.
-- **Predictive compound detection** — maintenance / shift-changeover escalations + trajectory forecasting, benchmarked against single-sensor baselines.
-- **Counterfactual intervention engine** — ranks the actions (revoke permit, ventilate, purge) that most reduce risk right now, with before/after scores.
-- **Assessment confidence** — every verdict is scored on sensor coverage, signal decisiveness, and data freshness, so operators know how much to trust it.
-- **Tamper-evident audit trail** — SHA-256 hash-chained evidence log with one-click integrity verification (OISD/PESO-grade).
-- **Industrial-hygiene calculator** — PEL/STEL exposure, %LEL, ventilation CFM, purge time, evacuation radius.
-- **Grounded ChromaDB RAG** — retrieves *then* synthesizes with citations; honest low-confidence fallback (never keyword-mapped).
-- **Knowledge graph + Incident Pattern Intelligence** — permit-proximity conflict detection and recurring near-miss prevention priorities.
-- **10 Indian languages** (English, Hindi, Telugu, Tamil, Marathi, Kannada, Punjabi, Gujarati, Bengali, Odia) with **browser Web-Speech TTS** (offline, zero extra deps).
-- **Seasonal safety calendar**, **nearest response-facility finder** (haversine ranking) + 24×7 helpline banner.
-- **Emergency Dispatch** — multilingual spoken evacuation message, live sensor stream, risk-trend chart, time-to-critical estimate.
-- **Reporting & audit** — PDF incident package + downloadable evidence ZIP + append-only JSONL evidence log (secrets sanitized).
-- **True offline path** — local CV + cached embeddings + deterministic compliance.
-- **Tested** — **131 pytest + 16 authoritative acceptance tasks** (147 total, all green).
-- **UI** — a polished **React/Vite dark-industrial command center** on a warm FastAPI backend (real-time, ~20ms scans), plus an all-in-one Streamlit app.
+| Area | What it does |
+| :-- | :-- |
+| **Compound risk** | Graduated continuous 0–100 with per-factor breakdown (live) **+** an auditable rule engine (benchmark); maintenance & shift-changeover escalations. |
+| **Prediction** | Trajectory forecasting → minutes-to-threshold; live predictive stream. |
+| **Counterfactual** | Ranks the single action (revoke permit / ventilate / purge) that most reduces risk, with before/after scores. |
+| **Vision** | Gemini multi-hazard scene understanding online; retrained offline model detects fire/smoke accurately (no false positives on red text / logos / album images). |
+| **Compliance** | 20 deterministic rules, each cross-referenced to **OISD + Factory Act 1948 + DGMS**. |
+| **Grounded RAG** | ChromaDB + MiniLM over OISD/Factory Act/DGMS; Gemini synthesis online, sentence-ranked extractive offline; cited, honest. |
+| **Knowledge graph** | Permit-proximity intelligence — flags ignition/intrusive permits in/adjacent to elevated-gas zones. |
+| **Incident intelligence** | Mines a near-miss corpus for recurring prevention priorities + similar-incident retrieval. |
+| **Confidence** | Coverage · decisiveness · freshness — how much to trust each verdict. |
+| **Emergency** | Multilingual (10 languages) spoken evacuation + briefing; robust browser TTS with offline fallback. |
+| **Audit** | Tamper-evident SHA-256 hash-chained evidence log + one-click integrity check. |
+| **Geospatial** | Real Leaflet plant map (auto-locate, risk zones, facilities) + weighted heatmap + graph. |
+| **Industrial hygiene** | PEL/STEL, %LEL, ventilation CFM, purge time, evacuation radius. |
+| **Offline-first** | Local CV + cached embeddings + deterministic engines → works air-gapped. |
 
 ---
 
-## 🏗️ Architecture — 5-stage LangGraph pipeline
+## 🧰 Tech stack
 
-```
-              ┌──────────────┐
-   input ───▶ │ Orchestrator │  (routes typed inputs; nodes return update dicts only)
-              └──────┬───────┘
-        ┌────────────┼────────────┬───────────────┐
-        ▼            ▼            ▼               ▼
-   ┌─────────┐  ┌─────────┐  ┌────────────┐  ┌────────────┐
-   │ Vision  │  │ Safety  │  │ Compliance │  │ Knowledge  │
-   │ Gemini/ │  │ compound│  │ 20 OISD    │  │ ChromaDB   │
-   │ OpenCV  │  │ risk    │  │ rules      │  │ grounded   │
-   └────┬────┘  └────┬────┘  └─────┬──────┘  └─────┬──────┘
-        └────────────┴─────────────┴───────────────┘
-                          ▼
-                  ┌──────────────┐
-                  │ OutputAgent  │  format + multilingual voice briefing
-                  └──────────────┘
-                          ▼
-                 OrchestratorResult  ──▶  audit/evidence log
-```
-
-**Contract-first design:** every agent returns a schema dataclass; the orchestrator
-converts raw dict payloads into typed inputs and aggregates into a single
-`OrchestratorResult`. `schema.py` is an **immutable contract** — no agent invents its
-own data shape.
-
----
-
-## 📂 Project structure
-
-```
-v/
-├── schema.py                     # Immutable dataclass contract (single source of truth)
-├── agents/
-│   ├── orchestrator.py           # LangGraph router + aggregator (5th OutputAgent stage)
-│   ├── vision_agent.py           # Gemini primary → real offline OpenCV fallback
-│   ├── safety_agent.py           # Compound risk score 0–100
-│   ├── compliance_agent.py       # Deterministic 20-rule OISD engine (no LLM)
-│   ├── knowledge_agent.py        # Grounded ChromaDB RAG + honest fallback
-│   └── output_agent.py           # Formatting + multilingual incident briefing
-├── compliance/safety_rules.json  # 20 OISD/OSHA rules
-├── knowledge_base/               # PDF ingestion → ChromaDB (collection "safety_manual")
-├── models/train_hazard_model.py  # Reproducible CPU hazard model → hazard_model.npz
-├── utils/
-│   ├── local_vision.py           # OpenCV HSV fire/smoke/electrical/gas detection
-│   ├── exposure_calc.py          # PEL/STEL, %LEL, ventilation, evac radius
-│   ├── safety_calendar.py        # Seasonal + shift safety advisories
-│   ├── response_directory.py     # Helpline + nearest-facility finder
-│   ├── translations.py           # 10-language evacuation messages
-│   ├── voice.py                  # Browser Web-Speech TTS component
-│   ├── vision_overlay.py         # Bounding-box overlay (PIL)
-│   ├── zone_status.py            # Zone colors + time-to-critical
-│   ├── audit_logger.py           # Append-only evidence trail (secrets sanitized)
-│   └── evidence_export.py        # Evidence ZIP packager
-├── ui/app.py                     # Streamlit UI (6 tabs)
-├── tests/                        # 70 pytest tests
-└── tools/accept.py               # 16 authoritative acceptance tasks (T001–T016)
-```
+| Layer | Stack |
+| :-- | :-- |
+| Frontend | React 18 · Vite · Leaflet · Web-Speech TTS (deps kept minimal) |
+| Backend | FastAPI · Uvicorn · Pydantic (warm, lazy-loaded heavy stack) |
+| Agents | LangGraph `StateGraph` · typed dataclass contract |
+| ML / CV | scikit-style logistic model · OpenCV · NumPy · sentence-transformers (MiniLM) |
+| RAG | ChromaDB (persistent) · `all-MiniLM-L6-v2` |
+| Cloud (optional) | Google Gemini (`gemini-2.5-flash` …) — vision + grounded synthesis |
+| Quality | 139 pytest · 16 authoritative acceptance tasks · headless UI tests |
 
 ---
 
 ## ⚡ Quick start
 
-**Option A — the React command center (recommended: fast + polished, one URL):**
-
 ```powershell
 cd $env:USERPROFILE\Desktop\v
+# Windows: always set UTF-8; offline embeddings avoid HF hub hangs
+$env:PYTHONUTF8=1; $env:PYTHONIOENCODING="utf-8"; $env:HF_HUB_OFFLINE=1; $env:TRANSFORMERS_OFFLINE=1
 
-# 1. build the React frontend once
+# 1) build the React command center (once)
 cd frontend; npm install; npm run build; cd ..
 
-# 2. run the warm backend — it serves BOTH the UI and the API at one URL
+# 2) run the warm backend — it serves BOTH the UI and the API
 .\venv\Scripts\python.exe -m uvicorn backend.main:app --port 8000
-# open http://localhost:8000   (API at /api/*, interactive docs at /docs)
+#    → open http://localhost:8000   (API at /api/*, docs at /docs)
 ```
 
-For live frontend development with hot reload: `cd frontend && npm run dev` (proxies /api to :8000).
+**Optional cloud accuracy:** put `GEMINI_API_KEY=...` in `.env` (gitignored — never
+committed). Vision → real Gemini scene understanding; Knowledge → grounded synthesis.
+Without it, everything runs **fully offline**.
 
-**Option B — the all-in-one Streamlit app:**
+**Alternatives:** `python -m streamlit run ui\app.py --server.port 8502` (all-in-one) ·
+`python -m tools.judge_demo` (offline narrated demo, no browser).
+
+---
+
+## 🔌 Backend API (selected)
+
+`GET /api/health` · `POST /api/scan` · `GET /api/zones` · `POST /api/forecast` ·
+`GET /api/incidents` · `GET /api/benchmark` · `GET /api/audit/verify` ·
+`POST /api/knowledge` · `POST /api/vision` · `GET /api/exposure` · `POST /api/dispatch` ·
+`POST /api/briefing` · `GET /api/facilities` — full interactive docs at **`/docs`**.
+
+---
+
+## 🧭 The command center (8 tabs)
+
+**Dashboard** (live risk + breakdown + compound-vs-single + confidence + interventions +
+limits + predictive stream) · **Zone Map** (Leaflet + heatmap + permit-proximity graph) ·
+**Vision** (upload/camera + Gemini/offline badge) · **Knowledge** (RAG chat, saved to
+device) · **Emergency** (multilingual voice dispatch + briefing) · **Safety Tools**
+(exposure calculator + facilities) · **Intelligence** (agent pipeline + incident patterns
++ tamper-evident audit) · **Benchmark** (methodology + honest results).
+
+---
+
+## ✅ Testing
 
 ```powershell
-.\venv\Scripts\python.exe -m streamlit run ui\app.py --server.port 8502
-# open http://localhost:8502
+python -m pytest -q                                             # ~139 tests, offline-deterministic
+for($i=1;$i -le 16;$i++){ python tools\accept.py ("T{0:D3}" -f $i) }   # 16 acceptance tasks
+python -m tools.benchmark                                       # the compound-vs-single benchmark
+python tools\ui_apptest.py                                      # headless Streamlit UI
 ```
 
-**One-command offline demo (no browser):** `python -m tools.judge_demo`
-
-**Runs with or without a network / API key.** No key → the system uses real offline
-computer vision, deterministic compliance, and extractive RAG.
+All checks pass. Tests require no network.
 
 ---
 
-## 🖥️ The seven tabs
+## 🗂️ Project structure
 
-1. **Dashboard** — preset scenarios *and* full custom sensor controls (sliders + advanced JSON), a 60-second **live stream** with a risk-trend chart, **time-to-critical** estimate, PDF incident package, and evidence ZIP. Supports `maintenance` and `shift_changeover` permit context for compound escalation.
-2. **Vision** — upload any JPG/PNG; hazards are drawn as labeled bounding boxes. Gemini online, genuine OpenCV analysis offline.
-3. **Knowledge** — grounded RAG with sources & confidence, tri-framework (OISD/Factory Act/DGMS) coverage, plus **Incident Pattern Intelligence** (recurring prevention priorities + similar past incidents).
-4. **Zone Map** — plant-layout overlay with **live risk-colored** markers, a weighted risk **heatmap**, and **Permit-Proximity Intelligence** (knowledge-graph conflict detection + graph view).
-5. **Emergency Dispatch** — simulate SMS/Email/PA/WhatsApp dispatch with a **multilingual, spoken** evacuation message and full audit logging.
-6. **Safety Tools** — exposure & ventilation calculator, nearest-facility finder, seasonal calendar, and the **voice-ready incident briefing** (OutputAgent).
-7. **Compound vs Single-Sensor** — the PS1 benchmark: headline false-negative reduction, detector comparison table, and the **Vizag counterfactual replay**.
-
----
-
-## 🧪 Testing
-
-```powershell
-# ~110 unit/integration tests
-python -m pytest -q
-
-# the compound-vs-single-sensor benchmark (PS1 headline metric)
-python -m tools.benchmark
-
-# 16 authoritative acceptance tasks
-for ($i=1; $i -le 16; $i++) { python tools\accept.py ("T{0:D3}" -f $i) }
+```
+backend/        FastAPI app (serves React + /api/*)
+frontend/       React/Vite SPA (src/{App,tabs,api,lib,voice,i18n})
+agents/         orchestrator + vision/safety/compliance/knowledge/output
+utils/          risk_model · scenario_generator · baseline_detector · forecast ·
+                knowledge_graph · incident_intelligence · confidence · interventions ·
+                limit_check · local_vision · gemini_vision · audit_logger · translations …
+models/         train_hazard_model.py → hazard_model.npz (offline fire model)
+knowledge_base/ build_db.py + raw/safety_standards.md + incidents.json
+compliance/     safety_rules.json (20 rules · tri-framework refs)
+tools/          benchmark · judge_demo · accept · ui_apptest
+tests/          ~139 pytest
+schema.py       IMMUTABLE dataclass contract        CLAUDE.md   engineering contract
+docs/           pitch deck + demo script            HANDOFF.md  full continuation brief
+ui/             legacy Streamlit app (port 8502)
 ```
 
-All checks pass (**126 pytest + 16 acceptance**). Tests are offline-deterministic (no network required).
-
 ---
 
-## 🔒 Engineering guarantees
+## 🏆 PS1 evaluation coverage
 
-- **Immutable schema contract** — agents return dataclasses, never ad-hoc dicts.
-- **Deterministic compliance** — the 20-rule engine makes **no LLM calls**; every rule is cross-referenced to **OISD + Factory Act 1948 + DGMS**, and every risk score is reproducible and auditable.
-- **Honest benchmarking** — the compound-vs-single-sensor evaluation uses detector-independent physics ground truth and realistic baselines; no test-gaming.
-- **LangGraph discipline** — nodes return update dicts only; no in-place state mutation.
-- **Grounded, honest RAG** — retrieval first; general-knowledge answers are explicitly labeled and down-weighted. **No keyword-mapping tables.**
-- **Security** — the Gemini API key is never printed or logged; the audit logger sanitizes secrets; local-filesystem only.
-- **Offline-first** — cached embeddings, local CV, and deterministic engines mean the plant stays protected even with no connectivity.
+| Focus area | How we address it |
+| :-- | :-- |
+| Compound accuracy vs single-sensor | Physics-labeled benchmark, detector-independent ground truth |
+| Prediction lead time | Trajectory forecasting + live stream (~18 min median lead) |
+| Geospatial quality | Real Leaflet map + heatmap + permit-proximity knowledge graph |
+| Regulatory coverage | 20 rules × **OISD + Factory Act 1948 + DGMS** |
+| False-negative reduction | The headline benchmark result (large, honest gap) |
 
 ---
 
@@ -192,4 +277,9 @@ All checks pass (**126 pytest + 16 acceptance**). Tests are offline-deterministi
 
 `112` National Emergency · `101` Fire · `108` Ambulance · `1906` Gas-leak / PESO · `1078` NDMA — all 24×7.
 
-*Built for high-stakes industrial environments where a wrong answer costs lives — not just a harvest.*
+<div align="center">
+
+*Built for high-stakes industrial environments where a wrong answer costs lives.*
+**New here? Read [`HANDOFF.md`](HANDOFF.md) and [`CLAUDE.md`](CLAUDE.md) first.**
+
+</div>
