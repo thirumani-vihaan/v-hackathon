@@ -38,6 +38,9 @@ IndustrialSafetyAI is a production-grade, offline-capable process-safety intelli
 - **Vision** — Gemini 2.5 with % bounding boxes online; **real OpenCV HSV pixel analysis + a CPU-trained model** (`hazard_model.npz`, trains in seconds, no dataset download) offline.
 - **Deterministic guardrail** — 20 safety rules with **compound risk scoring (0–100)**, no LLM, fully auditable, each cross-referenced to **OISD + Factory Act 1948 + DGMS**.
 - **Predictive compound detection** — maintenance / shift-changeover escalations + trajectory forecasting, benchmarked against single-sensor baselines.
+- **Counterfactual intervention engine** — ranks the actions (revoke permit, ventilate, purge) that most reduce risk right now, with before/after scores.
+- **Assessment confidence** — every verdict is scored on sensor coverage, signal decisiveness, and data freshness, so operators know how much to trust it.
+- **Tamper-evident audit trail** — SHA-256 hash-chained evidence log with one-click integrity verification (OISD/PESO-grade).
 - **Industrial-hygiene calculator** — PEL/STEL exposure, %LEL, ventilation CFM, purge time, evacuation radius.
 - **Grounded ChromaDB RAG** — retrieves *then* synthesizes with citations; honest low-confidence fallback (never keyword-mapped).
 - **Knowledge graph + Incident Pattern Intelligence** — permit-proximity conflict detection and recurring near-miss prevention priorities.
@@ -46,7 +49,7 @@ IndustrialSafetyAI is a production-grade, offline-capable process-safety intelli
 - **Emergency Dispatch** — multilingual spoken evacuation message, live sensor stream, risk-trend chart, time-to-critical estimate.
 - **Reporting & audit** — PDF incident package + downloadable evidence ZIP + append-only JSONL evidence log (secrets sanitized).
 - **True offline path** — local CV + cached embeddings + deterministic compliance.
-- **Tested** — **104 pytest + 16 authoritative acceptance tasks** (120 total, all green).
+- **Tested** — **126 pytest + 16 authoritative acceptance tasks** (142 total, all green).
 - **UI** — Streamlit, 7 interactive tabs, real uploads, live map, benchmark.
 
 ---
@@ -161,7 +164,7 @@ python -m tools.benchmark
 for ($i=1; $i -le 16; $i++) { python tools\accept.py ("T{0:D3}" -f $i) }
 ```
 
-All checks pass (**104 pytest + 16 acceptance**). Tests are offline-deterministic (no network required).
+All checks pass (**126 pytest + 16 acceptance**). Tests are offline-deterministic (no network required).
 
 ---
 
