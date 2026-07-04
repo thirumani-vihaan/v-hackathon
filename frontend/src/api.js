@@ -23,6 +23,9 @@ export const api = {
   briefing: (reading, active_permits, language) => post("/api/briefing", { reading, active_permits, language }),
   dispatch: (reading, active_permits, language) => post("/api/dispatch", { reading, active_permits, language }),
   facilities: (zone) => fetch(`/api/facilities?zone=${encodeURIComponent(zone)}`).then(j),
+  forecast: (gas_history, oxygen_history, seconds_per_step = 60) =>
+    post("/api/forecast", { gas_history, oxygen_history, seconds_per_step }),
+  auditEvents: (n = 15) => fetch(`/api/audit/events?n=${n}`).then(j),
   vision: (file) => {
     const fd = new FormData();
     fd.append("file", file);

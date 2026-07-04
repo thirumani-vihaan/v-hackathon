@@ -39,7 +39,8 @@ from utils.zone_status import zone_colors  # noqa: E402
 from utils import knowledge_graph as kg  # noqa: E402
 from utils import incident_intelligence as ii  # noqa: E402
 from utils import exposure_calc, response_directory, translations  # noqa: E402
-from utils.audit_logger import verify_chain, append_event  # noqa: E402
+from utils.forecast import forecast_summary  # noqa: E402
+from utils.audit_logger import verify_chain, append_event, read_last_n  # noqa: E402
 
 app = FastAPI(title="IndustrialSafetyAI API", version="1.0")
 app.add_middleware(
@@ -174,7 +175,31 @@ def zones(gas: float = 8.0, oxygen: float = 20.9, humidity: float = 50.0,
                   for u, v, d in g.edges(data=True)],
     }
     return {"colors": colors, "conflicts": kg.permits_near_hazard(zone_states),
-            "graph": graph}
+            "graph": graph,
+            "coords": {z: list(response_directory.ZONE_COORDS[z])
+                       for z in kg.ZONES if z in response_directory.ZONE_COORDS},
+            "facilities": [{"name": f["name"], "type": f["type"],
+                            "lat": f.get("lat"), "lon": f.get("lon"),
+                            "distance_km": f.get("distance_km")}
+                           for f in response_directory.nearest_facilities(sel, top_k=6)]}
+
+
+class ForecastRequest(BaseModel):
+    gas_history: List[float] = Field(default_factory=list)
+    oxygen_history: List[float] = Field(default_factory=list)
+    seconds_per_step: float = 60.0
+
+
+@app.post("/api/forecast")
+def forecast(req: ForecastRequest):
+    return forecast_summary(req.gas_history, req.oxygen_history or [20.9] * len(req.gas_history),
+                            seconds_per_step=req.seconds_per_step)
+
+
+@app.get("/api/audit/events")
+def audit_events(n: int = 15):
+    events = read_last_n(n)
+    return {"events": list(reversed(events)), "chain": verify_chain()}
 
 
 @app.get("/api/incidents")

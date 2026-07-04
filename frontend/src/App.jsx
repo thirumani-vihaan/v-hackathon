@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { band, pctColor, Gauge } from "./lib.jsx";
-import { ZoneMapTab, KnowledgeTab, VisionTab, EmergencyTab, ToolsTab, BenchmarkTab } from "./tabs.jsx";
+import { ZoneMapTab, KnowledgeTab, VisionTab, EmergencyTab, ToolsTab, BenchmarkTab, IntelligenceTab } from "./tabs.jsx";
 
 export const ALL_PERMITS = ["hot_work", "confined_space", "maintenance", "electrical", "shift_changeover", "cold_work"];
 export const ZONES = ["Zone-A-Tank-Farm", "Zone-B-Process", "Zone-C-Confined", "Zone-D-Substation"];
@@ -10,7 +10,7 @@ const PRESETS = {
   "Vizag Critical": { gas_ppm: 120, temp_c: 41, oxygen_pct: 18.4, humidity_pct: 70, worker_count: 4, zone: "Zone-C-Confined", permit_type: "hot_work", permits: ["hot_work"] },
   "Confined Maint.": { gas_ppm: 72, temp_c: 33, oxygen_pct: 18.9, humidity_pct: 66, worker_count: 3, zone: "Zone-C-Confined", permit_type: "confined_space", permits: ["maintenance", "shift_changeover", "confined_space"] },
 };
-const TABS = ["Dashboard", "Zone Map", "Knowledge", "Vision", "Emergency", "Safety Tools", "Benchmark"];
+const TABS = ["Dashboard", "Zone Map", "Vision", "Knowledge", "Emergency", "Safety Tools", "Intelligence", "Benchmark"];
 
 export default function App() {
   const [tab, setTab] = useState("Dashboard");
@@ -51,6 +51,7 @@ export default function App() {
         {tab === "Vision" && <VisionTab />}
         {tab === "Emergency" && <EmergencyTab r={r} permits={permits} />}
         {tab === "Safety Tools" && <ToolsTab r={r} />}
+        {tab === "Intelligence" && <IntelligenceTab r={r} permits={permits} />}
         {tab === "Benchmark" && <BenchmarkTab />}
         <div className="footer">Warm FastAPI backend · real multi-agent AI · fully offline · 131 automated tests</div>
       </div>
@@ -90,7 +91,65 @@ function Dashboard({ r, set, permits, togglePermit, applyPreset }) {
         {scan && <div className="row2"><CompoundCompare scan={scan} /><Confidence conf={scan.confidence} /></div>}
         {scan && <div className="row2"><Interventions iv={scan.interventions} /><Limits limits={scan.limits} /></div>}
         {scan && <Violations comp={scan.compliance} />}
+        <LiveStream r={r} permits={permits} />
       </div>
+    </div>
+  );
+}
+
+const readingOf = (r) => ({ gas_ppm: r.gas_ppm, temp_c: r.temp_c, oxygen_pct: r.oxygen_pct, humidity_pct: r.humidity_pct, worker_count: r.worker_count, zone: r.zone, permit_type: r.permit_type });
+
+function Sparkline({ pts, color }) {
+  if (pts.length < 2) return <div className="sub">Collecting…</div>;
+  const w = 100, h = 46;
+  const d = pts.map((v, i) => `${(i / (pts.length - 1)) * w},${h - (v / 100) * h}`).join(" ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: "100%", height: 60 }}>
+      <polyline points={d} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+function LiveStream({ r, permits }) {
+  const [on, setOn] = useState(false);
+  const [hist, setHist] = useState([]);
+  const [cur, setCur] = useState(null);
+  const [fc, setFc] = useState(null);
+  const timer = useRef(null), step = useRef(0), gas0 = useRef(0), series = useRef([]);
+
+  const stop = () => { setOn(false); if (timer.current) clearInterval(timer.current); timer.current = null; };
+  const tick = async () => {
+    step.current += 1;
+    const gas = Math.max(0, gas0.current + step.current * 5 + (Math.random() * 4 - 2));
+    const oxygen_pct = Math.max(10, r.oxygen_pct - step.current * 0.12);
+    const reading = { ...readingOf(r), gas_ppm: Math.round(gas * 10) / 10, oxygen_pct: Math.round(oxygen_pct * 10) / 10 };
+    const s = await api.scan(reading, permits).catch(() => null);
+    if (!s) return;
+    setCur({ ...s, gas: reading.gas_ppm });
+    series.current = [...series.current, { risk: s.risk_score, gas: reading.gas_ppm }].slice(-40);
+    setHist(series.current);
+    api.forecast(series.current.map((x) => x.gas), [], 60).then(setFc).catch(() => {});
+    if (step.current >= 30) stop();
+  };
+  const start = () => { setOn(true); setFc(null); step.current = 0; gas0.current = r.gas_ppm; series.current = []; setHist([]); timer.current = setInterval(tick, 1000); };
+  useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
+
+  const fmt = (m) => (m == null ? "—" : m === 0 ? "now" : `${m} min`);
+  return (
+    <div className="card">
+      <h3>Live Predictive Stream</h3>
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        {!on ? <button className="btn primary" onClick={start}>▶ Start live stream</button>
+             : <button className="btn" onClick={stop}>⏹ Stop</button>}
+        {cur && <span className="sub" style={{ alignSelf: "center" }}>live gas {cur.gas} ppm · risk {cur.risk_score}</span>}
+      </div>
+      <Sparkline pts={hist.map((x) => x.risk)} color="#22d3ee" />
+      <div className="metrics3" style={{ marginTop: 10 }}>
+        <div className="metric"><div className="v" style={{ color: "#e67e22" }}>{fc ? fmt(fc.minutes_to_gas_danger) : "—"}</div><div className="l">→ Gas danger</div></div>
+        <div className="metric"><div className="v" style={{ color: "#e74c3c" }}>{fc ? fmt(fc.minutes_to_gas_idlh) : "—"}</div><div className="l">→ IDLH</div></div>
+        <div className="metric"><div className="v" style={{ color: "#e74c3c" }}>{fc ? fmt(fc.minutes_to_oxygen_asphyxia) : "—"}</div><div className="l">→ O₂ asphyxia</div></div>
+      </div>
+      <div className="sub" style={{ marginTop: 8 }}>Forecasts project the live trajectory to physical thresholds — warning before any value crosses.</div>
     </div>
   );
 }
