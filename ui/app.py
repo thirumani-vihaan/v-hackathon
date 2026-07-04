@@ -319,6 +319,23 @@ with tab_dash:
             if _iv["residual_action"]:
                 st.error("🚨 " + _iv["residual_action"])
 
+            # --- Measured vs regulatory-limit compliance visual ---
+            from utils.limit_check import limit_utilisation
+            _lim = limit_utilisation(reading)
+            with st.expander("📊 Measured vs regulatory limit", expanded=False):
+                _ldf = pd.DataFrame(
+                    [{"parameter": r["parameter"], "% of limit": r["pct_of_limit"]}
+                     for r in _lim]).set_index("parameter")
+                st.bar_chart(_ldf)
+                st.caption("100% = the OISD/Factory Act safe limit; bars at or above "
+                           "100% are in violation (oxygen is a lower-bound limit).")
+                st.table(pd.DataFrame([
+                    {"Parameter": r["parameter"],
+                     "Measured": f"{r['measured']} {r['unit']}",
+                     "Limit": f"{r['limit']} {r['unit']}",
+                     "% of limit": f"{r['pct_of_limit']}%",
+                     "Status": r["status"]} for r in _lim]))
+
     if run_once:
         reading = reading_from_state()
         res = run_sensor(reading, st.session_state["d_permits"])
