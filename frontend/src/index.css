@@ -146,6 +146,10 @@ td.mono { font-family: var(--mono); }
 .err { color: var(--red); font-size: 12px; }
 .dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 28px; text-align: center; color: var(--muted); cursor: pointer; }
 .dropzone:hover { border-color: var(--cyan); }
+.typing i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin: 0 2px; animation: blink 1.2s infinite both; }
+.typing i:nth-child(2) { animation-delay: 0.2s; }
+.typing i:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
 .imgwrap { position: relative; display: inline-block; max-width: 100%; }
 .imgwrap img { max-width: 100%; border-radius: 10px; display: block; }
 .bbox { position: absolute; border: 2px solid var(--red); border-radius: 3px; }

@@ -117,16 +117,55 @@ class KnowledgeAgent:
             self._init_error = str(e)
 
     # ---- answer builders -------------------------------------------------
-    def _extractive_answer(self, docs) -> str:
-        top = docs[0].strip().replace("\n", " ")
-        return (f"Based on the safety manual: {top[:500]}"
-                + ("..." if len(top) > 500 else ""))
+    _STOP = set((
+        "the a an of to in for and or is are be with on at by from as that this it "
+        "must should shall not no all any within when what which how why do does "
+        "require required requires their there they you your our we").split())
+
+    def _extractive_answer(self, docs, question: str = "") -> str:
+        """Deterministic extractive QA: rank sentences in the retrieved chunks by
+        overlap with the question and return the most relevant ones — a focused
+        answer, not a raw chunk dump."""
+        import re
+        qwords = {w for w in re.findall(r"[a-z0-9]+", (question or "").lower())
+                  if w not in self._STOP and len(w) > 2}
+        sents = []
+        seen = set()
+        for doc in docs[:3]:
+            for s in re.split(r"(?<=[.!?])\s+", (doc or "").replace("\n", " ")):
+                s = s.strip()
+                if len(s) > 25 and s.lower() not in seen:
+                    seen.add(s.lower())
+                    sents.append(s)
+        if not sents:
+            top = (docs[0] if docs else "").strip().replace("\n", " ")
+            return top[:400]
+
+        def score(s):
+            return len(qwords & set(re.findall(r"[a-z0-9]+", s.lower())))
+
+        ranked = sorted(sents, key=lambda s: (-score(s), len(s)))
+        best = score(ranked[0]) if ranked else 0
+        picked, total = [], 0
+        for s in ranked:
+            if picked and score(s) == 0:
+                break
+            picked.append(s)
+            total += len(s)
+            if len(picked) >= 3 or total > 480:
+                break
+        if not picked:
+            picked = [ranked[0]]
+        answer = " ".join(picked)
+        if best <= 1:  # weak overlap — be honest about grounding
+            answer = "The manual does not directly address this; closest guidance: " + answer
+        return answer
 
     def _grounded_answer(self, question: str, docs, metas):
         """Return (answer, used_llm). Grounds a Gemini answer in retrieved text;
         falls back to extractive if Gemini is off or fails."""
         if not _llm_on():
-            return self._extractive_answer(docs), False
+            return self._extractive_answer(docs, question), False
         context_parts = []
         for i, (doc, meta) in enumerate(zip(docs, metas), start=1):
             ref = (meta or {}).get("filename", "manual")
@@ -143,7 +182,7 @@ class KnowledgeAgent:
         text = _gemini_generate(prompt)
         if text:
             return text, True
-        return self._extractive_answer(docs), False
+        return self._extractive_answer(docs, question), False
 
     def _no_corpus_answer(self, question: str) -> KnowledgeResult:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()

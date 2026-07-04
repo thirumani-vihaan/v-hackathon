@@ -107,36 +107,44 @@ def detect(image_path: str) -> VisionResult:
         notes = []
 
         # --- fire / smoke: hot red-orange, saturated, bright ---
-        fire_mask = (((H <= 25) | (H >= 160)) & (S > 90) & (V > 120))
+        fire_mask = (((H <= 22) | (H >= 162)) & (S > 110) & (V > 130))
         fire_frac = fire_mask.sum() / total
         model_p = _model_fire_prob(rgb)
-        fire_conf = min(0.98, fire_frac * 6.0)
+        fire_conf = min(0.98, fire_frac * 7.0)
         if model_p is not None:
-            fire_conf = min(0.98, 0.5 * fire_conf + 0.5 * model_p)
+            fire_conf = min(0.98, 0.45 * fire_conf + 0.55 * model_p)
             notes.append(f"model p(fire)={model_p:.2f}")
-        if fire_frac > 0.03 or (model_p is not None and model_p > 0.6):
+        # require real fire-coloured pixels AND (heuristic or model) agreement
+        if fire_frac > 0.06 or (model_p is not None and model_p > 0.7 and fire_frac > 0.015):
             bbox = _bbox_pct(fire_mask, w, h) or [10, 10, 60, 60]
             hazards.append(Hazard(type="smoke_fire",
                                   confidence=round(max(0.4, fire_conf), 2),
                                   bbox=bbox))
 
-        # --- electrical arc-flash: tight very-bright, low-saturation clusters ---
-        arc_mask = (V > 245) & (S < 40)
+        # --- electrical arc-flash: tight, very-bright, near-white cluster (rare) ---
+        arc_mask = (V > 248) & (S < 30)
         arc_frac = arc_mask.sum() / total
-        if 0.0008 < arc_frac < 0.08:
+        if 0.003 < arc_frac < 0.04:
             bbox = _bbox_pct(arc_mask, w, h) or [40, 40, 55, 55]
             hazards.append(Hazard(type="electrical_hazard",
-                                  confidence=round(min(0.9, 0.4 + arc_frac * 8), 2),
+                                  confidence=round(min(0.9, 0.45 + arc_frac * 9), 2),
                                   bbox=bbox))
 
-        # --- gas / haze: large low-saturation mid-bright region (visual plume) ---
-        haze_mask = (S < 45) & (V > 110) & (V < 240)
+        # --- gas / haze: a large, uniform low-saturation mid-bright plume with real
+        #     texture (a flat wall/gray background has near-zero variance -> not a plume) ---
+        haze_mask = (S < 38) & (V > 120) & (V < 235)
         haze_frac = haze_mask.sum() / total
-        if haze_frac > 0.35:
+        v_std = float(np.std(V.astype(np.float32)))
+        if 0.55 < haze_frac < 0.9 and v_std > 14:
             bbox = _bbox_pct(haze_mask, w, h) or [0, 0, 100, 100]
             hazards.append(Hazard(type="gas_leak_visual",
                                   confidence=round(min(0.85, haze_frac), 2),
                                   bbox=bbox))
+
+        # Precision filter: keep only confident detections, strongest first (avoid
+        # crying wolf with several weak, contradictory boxes).
+        hazards = sorted([hz for hz in hazards if hz.confidence >= 0.5],
+                         key=lambda hz: -hz.confidence)[:2]
 
         if hazards:
             kinds = ", ".join(sorted({hz.type for hz in hazards}))

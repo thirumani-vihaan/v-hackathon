@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { api } from "./api";
-import { speak, stopSpeaking, voiceInfo } from "./voice";
+import { speak, stopSpeaking, voiceInfo, hasVoice } from "./voice";
 
 const readingOf = (r) => ({ gas_ppm: r.gas_ppm, temp_c: r.temp_c, oxygen_pct: r.oxygen_pct, humidity_pct: r.humidity_pct, worker_count: r.worker_count, zone: r.zone, permit_type: r.permit_type });
 const HEX = { red: "#e74c3c", orange: "#e67e22", green: "#2ecc71" };
@@ -45,17 +45,25 @@ function MapView({ colors, coords, facilities }) {
 
 function GraphViz({ graph }) {
   const nodes = graph.nodes, edges = graph.edges;
-  const W = 360, H = 300, cx = W / 2, cy = H / 2, R = 118;
+  const W = 420, H = 360, cx = W / 2, cy = H / 2, R = 106;
   const pos = {};
-  nodes.forEach((n, i) => { const a = (i / nodes.length) * 2 * Math.PI - Math.PI / 2; pos[n.id] = [cx + R * Math.cos(a), cy + R * Math.sin(a)]; });
+  nodes.forEach((n, i) => { const a = (i / nodes.length) * 2 * Math.PI - Math.PI / 2; pos[n.id] = [cx + R * Math.cos(a), cy + R * Math.sin(a), a]; });
   const color = (k) => (k === "zone" ? "#f1c40f" : k === "permit" ? "#22d3ee" : "#8b98ad");
+  const label = (n) => {
+    if (n.kind === "zone") return n.id.replace("Zone-", "");
+    if (n.kind === "permit") return (n.id.split(":")[1] || "").split("@")[0].replace(/_/g, " ");
+    return n.id.length > 16 ? n.id.slice(0, 15) + "…" : n.id;
+  };
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%" }}>
       {edges.map((e, i) => { const a = pos[e.source], b = pos[e.target]; if (!a || !b) return null;
-        return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(150,170,200,0.18)" strokeWidth="1" />; })}
-      {nodes.map((n) => { const p = pos[n.id]; const c = color(n.kind);
-        return <g key={n.id}><circle cx={p[0]} cy={p[1]} r={n.kind === "zone" ? 9 : 5} fill={c} stroke={c} />
-          <title>{n.id} ({n.kind})</title></g>; })}
+        return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(150,170,200,0.16)" strokeWidth="1" />; })}
+      {nodes.map((n) => { const [x, y, ang] = pos[n.id]; const c = color(n.kind); const right = Math.cos(ang) >= 0;
+        return <g key={n.id}>
+          <circle cx={x} cy={y} r={n.kind === "zone" ? 8 : 5} fill={c} stroke={c} />
+          <text x={x + (right ? 9 : -9)} y={y + 3} fontSize="9" fill="#c7d0dd" textAnchor={right ? "start" : "end"}>{label(n)}</text>
+          <title>{n.id} ({n.kind})</title>
+        </g>; })}
     </svg>
   );
 }
@@ -111,6 +119,8 @@ export function KnowledgeTab() {
     const question = q; setQ(""); setLoading(true);
     const t0 = performance.now();
     try { const res = await api.knowledge(question);
+      const wait = Math.max(0, 850 - (performance.now() - t0));
+      if (wait) await new Promise((rs) => setTimeout(rs, wait));
       setHist((h) => [...h, { q: question, ...res, ms: Math.round(performance.now() - t0), ts: Date.now() }]); }
     catch { setHist((h) => [...h, { q: question, answer: "Backend error (first call loads the RAG model; retry in a moment).", sources: [], confidence: 0, ts: Date.now() }]); }
     setLoading(false);
@@ -131,7 +141,7 @@ export function KnowledgeTab() {
             <div className="cite">confidence {(m.confidence || 0).toFixed(2)} · sources: {(m.sources || []).map((s) => `${s.filename} p.${s.page}`).join(", ") || "none"} · {m.answered_from_documents ? "grounded" : "general"}{m.ms ? ` · ${m.ms} ms` : ""}{m.ts ? ` · ${hhmm(m.ts)}` : ""}
               {" · "}<a style={{ color: "var(--cyan)", cursor: "pointer" }} onClick={() => speak(m.answer, "English")}>🔊 read</a></div>
           </div></React.Fragment>))}
-        {loading && <div className="msg a sub">Retrieving &amp; synthesizing…</div>}
+        {loading && <div className="msg a"><span className="typing"><i></i><i></i><i></i></span></div>}
         <div ref={endRef} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
@@ -191,6 +201,7 @@ export function VisionTab() {
           {loading && <div className="sub">Analyzing…</div>}
           {res && !loading && <>
             <div className="sub" style={{ marginBottom: 8 }}>Source: {res.source} · {res.summary}</div>
+            {res.source === "fallback" && <div className="sub" style={{ marginBottom: 8, color: "#f1c40f" }}>Offline heuristic detector (no vision API key) — precision-tuned; a vision key enables full-accuracy scene understanding.</div>}
             {res.hazards && res.hazards.length ? res.hazards.map((h, i) => (
               <div className="bar" key={i}>
                 <div className="top"><span>{h.type.replace(/_/g, " ")}</span><b>{(h.confidence * 100).toFixed(0)}%</b></div>
@@ -210,8 +221,17 @@ export function EmergencyTab({ r, permits }) {
   const [disp, setDisp] = useState(null);
   const [brief, setBrief] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [note, setNote] = useState("");
   useEffect(() => { api.languages().then(setLangs).catch(() => {}); }, []);
   useEffect(() => () => stopSpeaking(), []);  // stop voice when leaving the tab
+
+  const sayAlert = (d, l) => {
+    setNote("");
+    if (hasVoice(l)) { setSpeaking(true); speak(d.message, l, () => setSpeaking(false)); }
+    else if (d.english_message) { setNote(`No ${l} voice installed on this device — playing the English alert instead.`); setSpeaking(true); speak(d.english_message, "English", () => setSpeaking(false)); }
+    else setNote(`No ${l} voice available on this device (install the language pack).`);
+  };
   const run = async () => {
     if (loading) return;
     setLoading(true);
@@ -221,8 +241,9 @@ export function EmergencyTab({ r, permits }) {
       api.briefing(rd, permits, lang).catch(() => null),
     ]);
     setDisp(d); setBrief(b); setLoading(false);
-    if (d && d.message) speak(d.message, lang);
+    if (d) sayAlert(d, lang);
   };
+  const stop = () => { stopSpeaking(); setSpeaking(false); };
   return (
     <div className="grid">
       <div className="col">
@@ -231,8 +252,9 @@ export function EmergencyTab({ r, permits }) {
           <div className="ctrl"><label>Alert language</label>
             <select value={lang} onChange={(e) => setLang(e.target.value)}>{langs.map((l) => <option key={l}>{l}</option>)}</select></div>
           <button className="btn primary" style={{ width: "100%" }} onClick={run} disabled={loading}>{loading ? "Dispatching…" : "🚨 Simulate Dispatch & Speak Alert"}</button>
+          <button className="btn" style={{ width: "100%", marginTop: 8 }} onClick={stop} disabled={!speaking}>{speaking ? "⏹ Stop voice (speaking…)" : "⏹ Stop voice"}</button>
           <div className="sub" style={{ marginTop: 10 }}>Uses current sensor state ({r.zone}, gas {r.gas_ppm} ppm). Voice: {voiceInfo(lang)}.</div>
-          <button className="btn" style={{ width: "100%", marginTop: 8 }} onClick={stopSpeaking}>⏹ Stop voice</button>
+          {note && <div className="sub" style={{ marginTop: 6, color: "#f1c40f" }}>{note}</div>}
         </div>
       </div>
       <div className="col">
@@ -240,12 +262,13 @@ export function EmergencyTab({ r, permits }) {
           <h3>Multilingual Evacuation Alert · {disp.severity}</h3>
           <div className="banner-warn" style={{ color: "#ffd8d3", fontSize: 14 }}>{disp.message}</div>
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button className="btn" onClick={() => speak(disp.message, lang)}>🔊 Replay alert</button></div>
+            <button className="btn" onClick={() => sayAlert(disp, lang)}>🔊 Replay alert</button>
+            <button className="btn" onClick={stop} disabled={!speaking}>⏹ Stop</button></div>
           <div className="sub" style={{ marginTop: 10 }}>Dispatched via {disp.channels.join(" · ")} · logged to tamper-evident audit trail.</div>
         </div>}
         {brief && <div className="card"><h3>Incident Briefing (voice-ready)</h3>
           <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 12.5, margin: 0, lineHeight: 1.6 }}>{brief.briefing}</pre>
-          <button className="btn" style={{ marginTop: 10 }} onClick={() => speak(brief.briefing, "English")}>🔊 Read briefing</button></div>}
+          <button className="btn" style={{ marginTop: 10 }} onClick={() => { setSpeaking(true); speak(brief.briefing, "English", () => setSpeaking(false)); }}>🔊 Read briefing</button></div>}
         {!disp && <div className="card sub">Run a dispatch to generate and speak the multilingual alert.</div>}
       </div>
     </div>

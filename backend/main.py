@@ -324,12 +324,14 @@ def dispatch(req: BriefRequest):
     zone = reading.zone
     msg, _lc = translations.translate_evac(req.language, zone, result.request_id,
                                             use_gemini=False)
+    eng, _ec = translations.translate_evac("English", zone, result.request_id,
+                                            use_gemini=False)
     channels = ["SMS", "Email", "Public Address", "WhatsApp"]
     append_event({"type": "dispatch", "request_id": result.request_id,
                   "zone": zone, "language": req.language,
                   "severity": _output.severity(result), "channels": channels})
-    return {"message": msg, "language": req.language, "zone": zone,
-            "channels": channels, "severity": _output.severity(result),
+    return {"message": msg, "english_message": eng, "language": req.language,
+            "zone": zone, "channels": channels, "severity": _output.severity(result),
             "request_id": result.request_id}
 
 

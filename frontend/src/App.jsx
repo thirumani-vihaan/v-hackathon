@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import { band, pctColor, Gauge } from "./lib.jsx";
 import { ZoneMapTab, KnowledgeTab, VisionTab, EmergencyTab, ToolsTab, BenchmarkTab, IntelligenceTab } from "./tabs.jsx";
 import { stopSpeaking } from "./voice";
+import { I18n, makeT, UI_LANGS, useT } from "./i18n";
 
 export const ALL_PERMITS = ["hot_work", "confined_space", "maintenance", "electrical", "shift_changeover", "cold_work"];
 export const ZONES = ["Zone-A-Tank-Farm", "Zone-B-Process", "Zone-C-Confined", "Zone-D-Substation"];
@@ -18,6 +19,8 @@ export default function App() {
   const [r, setR] = useState(PRESETS["Vizag Critical"]);
   const [permits, setPermits] = useState(PRESETS["Vizag Critical"].permits);
   const [online, setOnline] = useState(true);
+  const [uiLang, setUiLang] = useState("English");
+  const t = useMemo(() => makeT(uiLang), [uiLang]);
 
   useEffect(() => {
     const id = setInterval(() => api.health().then(() => setOnline(true)).catch(() => setOnline(false)), 5000);
@@ -31,20 +34,24 @@ export default function App() {
   const shared = { r, set, permits, togglePermit, applyPreset };
 
   return (
+    <I18n.Provider value={{ lang: uiLang, t }}>
     <div className="app">
       <div className="topbar">
         <div className="brand">
           <div className="logo">🛡️</div>
-          <div><h1>IndustrialSafetyAI</h1><p>Zero-Harm Command Center</p></div>
+          <div><h1>IndustrialSafetyAI</h1><p>{t("Zero-Harm Command Center")}</p></div>
         </div>
         <div className="pills">
-          <span className="pill">offline · deterministic</span>
-          <span className="pill live"><span className="dot" style={{ background: online ? "#2ecc71" : "#e74c3c" }} />{online ? "BACKEND LIVE" : "BACKEND DOWN"}</span>
+          <select value={uiLang} onChange={(e) => setUiLang(e.target.value)} style={{ width: "auto", padding: "5px 8px" }} title="UI language">
+            {UI_LANGS.map((l) => <option key={l}>{l}</option>)}
+          </select>
+          <span className="pill">{t("offline · deterministic")}</span>
+          <span className="pill live"><span className="dot" style={{ background: online ? "#2ecc71" : "#e74c3c" }} />{online ? t("BACKEND LIVE") : t("BACKEND DOWN")}</span>
         </div>
       </div>
       <div className="wrap">
         <div className="tabs">
-          {TABS.map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => { stopSpeaking(); setTab(t); }}>{t}</button>)}
+          {TABS.map((tb) => <button key={tb} className={tb === tab ? "on" : ""} onClick={() => { stopSpeaking(); setTab(tb); }}>{t(tb)}</button>)}
         </div>
         {tab === "Dashboard" && <Dashboard {...shared} />}
         {tab === "Zone Map" && <ZoneMapTab r={r} permits={permits} />}
@@ -54,11 +61,14 @@ export default function App() {
         {tab === "Safety Tools" && <ToolsTab r={r} />}
         {tab === "Intelligence" && <IntelligenceTab r={r} permits={permits} />}
         {tab === "Benchmark" && <BenchmarkTab />}
-        <div className="footer">Warm FastAPI backend · real multi-agent AI · fully offline · 131 automated tests</div>
+        <div className="footer">Warm FastAPI backend · real multi-agent AI · fully offline · 139 automated tests</div>
       </div>
     </div>
+    </I18n.Provider>
   );
 }
+
+function CH({ children, style }) { const { t } = useT(); return <h3 style={style}>{t(children)}</h3>; }
 
 function Dashboard({ r, set, permits, togglePermit, applyPreset }) {
   const [scan, setScan] = useState(null);
@@ -139,7 +149,7 @@ function LiveStream({ r, permits }) {
   const fmt = (m) => (m == null ? "—" : m === 0 ? "now" : `${m} min`);
   return (
     <div className="card">
-      <h3>Live Predictive Stream</h3>
+      <CH>Live Predictive Stream</CH>
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         {!on ? <button className="btn primary" onClick={start}>▶ Start live stream</button>
              : <button className="btn" onClick={stop}>⏹ Stop</button>}
@@ -157,6 +167,7 @@ function LiveStream({ r, permits }) {
 }
 
 function Controls({ r, set, permits, togglePermit, applyPreset, PRESETS }) {
+  const { t } = useT();
   const Slider = ({ k, label, min, max, step, unit }) => (
     <div className="ctrl">
       <label>{label}<b>{r[k]}{unit}</b></label>
@@ -165,7 +176,7 @@ function Controls({ r, set, permits, togglePermit, applyPreset, PRESETS }) {
   );
   return (
     <div className="card">
-      <h3>Sensor & Permit Controls</h3>
+      <h3>{t("Sensor & Permit Controls")}</h3>
       <div className="preset-row">
         {Object.keys(PRESETS).map((n) => <button key={n} onClick={() => applyPreset(n)}>{n}</button>)}
       </div>
@@ -185,10 +196,11 @@ function Controls({ r, set, permits, togglePermit, applyPreset, PRESETS }) {
 }
 
 function RiskHero({ scan, b, latency }) {
+  const { t } = useT();
   const score = scan ? scan.risk_score : 0;
   return (
     <div className="card hero">
-      <h3 style={{ textAlign: "center" }}>Compound Risk {latency != null && <span className="sub">· {latency} ms</span>}</h3>
+      <h3 style={{ textAlign: "center" }}>{t("Compound Risk")} {latency != null && <span className="sub">· {latency} ms</span>}</h3>
       <Gauge score={score} color={b.color} />
       <div className="score" style={{ color: b.color }}>{score}<span style={{ fontSize: 22 }}>/100</span></div>
       <div className="band" style={{ color: b.color }}>{b.name}</div>
@@ -202,7 +214,7 @@ function Contributions({ data }) {
   const max = Math.max(...data.contributions.map((c) => c.points), 1);
   return (
     <div className="card">
-      <h3>Risk Contribution Breakdown</h3>
+      <CH>Risk Contribution Breakdown</CH>
       {data.contributions.length ? data.contributions.map((c) => (
         <div className="bar" key={c.factor}>
           <div className="top"><span>{c.factor} <span className="muted">— {c.detail}</span></span><b>+{c.points}</b></div>
@@ -218,7 +230,7 @@ function CompoundCompare({ scan }) {
   const s = scan.single_sensor;
   return (
     <div className="card">
-      <h3>Compound vs Single-Sensor</h3>
+      <CH>Compound vs Single-Sensor</CH>
       <div className="cmp-row"><span className="cmp-tag">Individual sensor alarms</span>
         <span className="cmp-val" style={{ color: s.count ? "#e67e22" : "#2ecc71" }}>{s.count} / {s.total} triggered</span></div>
       <div className="cmp-row"><span className="cmp-tag">Compound engine</span>
@@ -237,7 +249,7 @@ function Confidence({ conf }) {
   const color = conf.label === "high" ? "#2ecc71" : conf.label === "medium" ? "#f1c40f" : "#e74c3c";
   return (
     <div className="card">
-      <h3>Assessment Confidence</h3>
+      <CH>Assessment Confidence</CH>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
         <span className="big-num" style={{ color, fontSize: 26 }}>{Math.round(conf.confidence * 100)}%</span>
         <span className="tag" style={{ background: `${color}22`, color }}>{conf.label.toUpperCase()}</span></div>
@@ -252,7 +264,7 @@ function Confidence({ conf }) {
 function Interventions({ iv }) {
   return (
     <div className="card">
-      <h3>Recommended Interventions</h3>
+      <CH>Recommended Interventions</CH>
       {iv.recommended ? iv.interventions.filter((c) => c.risk_reduction > 0).slice(0, 4).map((c, i) => (
         <div className={`iv ${i === 0 ? "top" : ""}`} key={c.action}>
           <div className="head"><span className="act">{i === 0 ? "➡ " : ""}{c.action}</span><span className="delta">−{c.risk_reduction}</span></div>
