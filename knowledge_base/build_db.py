@@ -43,6 +43,32 @@ def _chunk_text(text: str, max_chars: int = 800, overlap: int = 120):
     return chunks
 
 
+def _extract_units(path: str):
+    """Return [(unit_label, text)] for a source file. PDFs split by page; text/markdown
+    split by heading so each section carries a meaningful citation label."""
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".pdf":
+        from pypdf import PdfReader
+        reader = PdfReader(path)
+        return [(str(i), page.extract_text() or "")
+                for i, page in enumerate(reader.pages, start=1)]
+    # .txt / .md — split on markdown headings into logical sections
+    with open(path, "r", encoding="utf-8") as f:
+        raw = f.read()
+    units, label, buf = [], "1", []
+    for line in raw.splitlines():
+        if line.lstrip().startswith("#"):
+            if buf:
+                units.append((label, "\n".join(buf)))
+                buf = []
+            label = line.lstrip("# ").strip()[:60] or label
+        else:
+            buf.append(line)
+    if buf:
+        units.append((label, "\n".join(buf)))
+    return units or [("1", raw)]
+
+
 def _get_client():
     import chromadb
     try:
@@ -65,12 +91,12 @@ def _get_ef():
 
 def build():
     os.makedirs(PERSIST_DIR, exist_ok=True)
-    from pypdf import PdfReader
 
-    pdfs = [os.path.join(RAW_DIR, f) for f in os.listdir(RAW_DIR)
-            if f.lower().endswith(".pdf")] if os.path.isdir(RAW_DIR) else []
-    if not pdfs:
-        print(f"[build_db] no PDFs found in {RAW_DIR}")
+    exts = (".pdf", ".txt", ".md")
+    sources = [os.path.join(RAW_DIR, f) for f in os.listdir(RAW_DIR)
+               if f.lower().endswith(exts)] if os.path.isdir(RAW_DIR) else []
+    if not sources:
+        print(f"[build_db] no source documents found in {RAW_DIR}")
         return 0
 
     client = _get_client()
@@ -86,15 +112,13 @@ def build():
 
     ids, docs, metas = [], [], []
     total = 0
-    for pdf_path in pdfs:
-        filename = os.path.basename(pdf_path)
-        reader = PdfReader(pdf_path)
-        for page_idx, page in enumerate(reader.pages, start=1):
-            text = page.extract_text() or ""
+    for src_path in sources:
+        filename = os.path.basename(src_path)
+        for unit_label, text in _extract_units(src_path):
             for c_idx, chunk in enumerate(_chunk_text(text)):
-                ids.append(f"{filename}-p{page_idx}-c{c_idx}")
+                ids.append(f"{filename}-{unit_label[:24]}-c{c_idx}-{total}")
                 docs.append(chunk)
-                metas.append({"filename": filename, "page": str(page_idx)})
+                metas.append({"filename": filename, "page": str(unit_label)})
                 total += 1
 
     if docs:
@@ -103,7 +127,7 @@ def build():
         for i in range(0, len(docs), B):
             col.add(ids=ids[i:i + B], documents=docs[i:i + B],
                     metadatas=metas[i:i + B])
-    print(f"[build_db] ingested {total} chunks from {len(pdfs)} PDF(s) "
+    print(f"[build_db] ingested {total} chunks from {len(sources)} document(s) "
           f"into '{COLLECTION}' at {PERSIST_DIR}")
     return total
 
