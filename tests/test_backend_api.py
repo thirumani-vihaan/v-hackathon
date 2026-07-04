@@ -53,3 +53,29 @@ def test_incidents_and_benchmark_and_audit():
     b = client.get("/api/benchmark").json()
     assert b["headline"]["false_negative_reduction_pct"] > 0
     assert client.get("/api/audit/verify").json()["valid"] in (True, False)
+
+
+def test_exposure_and_gases():
+    g = client.get("/api/gases").json()
+    assert "h2s" in g
+    rep = client.get("/api/exposure", params={"gas": "h2s", "ppm": 120}).json()
+    assert rep["exposure"]["status"] == "IDLH"
+    assert rep["evacuation_radius_m"] > 0
+
+
+def test_languages_and_dispatch_and_briefing():
+    langs = client.get("/api/languages").json()
+    assert "Telugu" in langs
+    body = {"reading": {"gas_ppm": 120, "oxygen_pct": 18.4, "zone": "Zone-C-Confined"},
+            "active_permits": ["hot_work"], "language": "Telugu"}
+    d = client.post("/api/dispatch", json=body).json()
+    assert d["message"] and d["severity"] == "CRITICAL"
+    assert set(["SMS", "Email"]).issubset(set(d["channels"]))
+    br = client.post("/api/briefing", json=body).json()
+    assert "briefing" in br and br["request_id"]
+
+
+def test_facilities():
+    f = client.get("/api/facilities", params={"zone": "Zone-C-Confined"}).json()
+    assert len(f["nearest"]) > 0
+    assert "contacts" in f

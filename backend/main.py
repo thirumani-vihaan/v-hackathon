@@ -19,14 +19,18 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi import FastAPI, HTTPException, UploadFile, File  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 # Light imports only (no torch/chromadb here).
-from schema import SensorReading, SensorInput, ComplianceInput, QueryInput  # noqa: E402
+from schema import (SensorReading, SensorInput, ComplianceInput, QueryInput,  # noqa: E402
+                    OrchestratorResult)
 from agents.safety_agent import SafetyAgent  # noqa: E402
 from agents.compliance_agent import ComplianceAgent  # noqa: E402
+from agents.output_agent import OutputAgent  # noqa: E402
 from utils.interventions import rank_interventions  # noqa: E402
 from utils.confidence import assess_confidence  # noqa: E402
 from utils.limit_check import limit_utilisation  # noqa: E402
@@ -34,6 +38,7 @@ from utils.baseline_detector import PROFILES as _SINGLE_PROFILES  # noqa: E402
 from utils.zone_status import zone_colors  # noqa: E402
 from utils import knowledge_graph as kg  # noqa: E402
 from utils import incident_intelligence as ii  # noqa: E402
+from utils import exposure_calc, response_directory, translations  # noqa: E402
 from utils.audit_logger import verify_chain, append_event  # noqa: E402
 
 app = FastAPI(title="IndustrialSafetyAI API", version="1.0")
@@ -42,7 +47,9 @@ app.add_middleware(
 
 _safety = SafetyAgent()
 _compliance = ComplianceAgent()
+_output = OutputAgent()
 _knowledge = None  # lazy
+_vision = None  # lazy
 
 
 def _get_knowledge():
@@ -51,6 +58,22 @@ def _get_knowledge():
         from agents.knowledge_agent import KnowledgeAgent  # heavy import, deferred
         _knowledge = KnowledgeAgent()
     return _knowledge
+
+
+def _get_vision():
+    global _vision
+    if _vision is None:
+        from agents.vision_agent import VisionAgent  # opencv/numpy, deferred
+        _vision = VisionAgent()
+    return _vision
+
+
+def _build_result(reading: SensorReading, permits: List[str]) -> OrchestratorResult:
+    import uuid
+    alert = _safety.assess(SensorInput(reading=reading, active_permits=permits))
+    comp = _compliance.evaluate(ComplianceInput(sensor=reading, active_permits=permits))
+    return OrchestratorResult(request_id=str(uuid.uuid4())[:8], input_type="sensor",
+                              safety=alert, compliance=comp)
 
 
 # ---------------------------------------------------------------- models
@@ -193,6 +216,102 @@ def knowledge(req: QueryRequest):
                 "error": res.error}
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/vision")
+async def vision(file: UploadFile = File(...)):
+    import tempfile
+    from schema import VisionInput
+    suffix = os.path.splitext(file.filename or "img.jpg")[1] or ".jpg"
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    try:
+        tmp.write(await file.read())
+        tmp.close()
+        res = _get_vision().analyze(VisionInput(image_path=tmp.name))
+        return {"source": res.source, "summary": res.summary,
+                "hazards": [{"type": h.type, "confidence": h.confidence,
+                             "bbox": h.bbox} for h in res.hazards],
+                "error": res.error}
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except Exception:
+            pass
+
+
+@app.get("/api/exposure")
+def exposure(gas: str = "h2s", ppm: float = 120.0, volume: float = 100.0,
+             ach: float = 12.0):
+    try:
+        return exposure_calc.full_report(gas, ppm, volume, ach)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.get("/api/gases")
+def gases():
+    return {k: v["name"] for k, v in exposure_calc.GASES.items()}
+
+
+@app.get("/api/languages")
+def languages():
+    return list(translations.LANGUAGES.keys())
+
+
+class BriefRequest(BaseModel):
+    reading: ReadingModel
+    active_permits: List[str] = Field(default_factory=list)
+    language: str = "English"
+
+
+@app.post("/api/briefing")
+def briefing(req: BriefRequest):
+    reading = _to_reading(req.reading)
+    result = _build_result(reading, list(req.active_permits))
+    text = _output.briefing(result, req.language)
+    return {"briefing": text, "severity": _output.severity(result),
+            "request_id": result.request_id}
+
+
+@app.post("/api/dispatch")
+def dispatch(req: BriefRequest):
+    reading = _to_reading(req.reading)
+    result = _build_result(reading, list(req.active_permits))
+    zone = reading.zone
+    msg, _lc = translations.translate_evac(req.language, zone, result.request_id,
+                                            use_gemini=False)
+    channels = ["SMS", "Email", "Public Address", "WhatsApp"]
+    append_event({"type": "dispatch", "request_id": result.request_id,
+                  "zone": zone, "language": req.language,
+                  "severity": _output.severity(result), "channels": channels})
+    return {"message": msg, "language": req.language, "zone": zone,
+            "channels": channels, "severity": _output.severity(result),
+            "request_id": result.request_id}
+
+
+@app.get("/api/facilities")
+def facilities(zone: str = "Zone-A-Tank-Farm"):
+    z = zone if zone in response_directory.ZONE_COORDS else \
+        list(response_directory.ZONE_COORDS)[0]
+    return {"nearest": response_directory.nearest_facilities(z, top_k=4),
+            "contacts": response_directory.CONTACTS,
+            "helplines": response_directory.HELPLINES}
+
+
+# ---- serve the built React frontend at the root (single-URL deployment) ----
+_DIST = os.path.join(_ROOT, "frontend", "dist")
+if os.path.isdir(_DIST):
+    app.mount("/assets", StaticFiles(directory=os.path.join(_DIST, "assets")),
+              name="assets")
+
+    @app.get("/")
+    def _index():
+        return FileResponse(os.path.join(_DIST, "index.html"))
+else:
+    @app.get("/")
+    def _no_ui():
+        return {"status": "API running", "ui": "build the frontend: cd frontend && npm run build",
+                "endpoints": "/api/health, /api/scan, /api/zones, /api/benchmark, /docs"}
 
 
 if __name__ == "__main__":

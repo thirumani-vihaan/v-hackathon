@@ -118,18 +118,20 @@ v/
 
 ## ⚡ Quick start
 
-**Option A — the React command center (recommended: fast + polished):**
+**Option A — the React command center (recommended: fast + polished, one URL):**
 
 ```powershell
 cd $env:USERPROFILE\Desktop\v
-# 1. warm FastAPI backend (loads once, serves ~20ms scans; RAG lazy-loads on first use)
-.\venv\Scripts\python.exe -m uvicorn backend.main:app --port 8000
 
-# 2. in a second terminal — the React dashboard
-cd frontend
-npm install        # first time only
-npm run build && npm run preview   # http://localhost:5173  (dev: npm run dev)
+# 1. build the React frontend once
+cd frontend; npm install; npm run build; cd ..
+
+# 2. run the warm backend — it serves BOTH the UI and the API at one URL
+.\venv\Scripts\python.exe -m uvicorn backend.main:app --port 8000
+# open http://localhost:8000   (API at /api/*, interactive docs at /docs)
 ```
+
+For live frontend development with hot reload: `cd frontend && npm run dev` (proxies /api to :8000).
 
 **Option B — the all-in-one Streamlit app:**
 
