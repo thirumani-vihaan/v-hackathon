@@ -110,11 +110,43 @@ def _neg_noise():
     return RNG.integers(0, 256, (IMG, IMG, 3), dtype=np.uint8)
 
 
-_POS = [_flame, _smoke]
-_NEG = [_neg_solid, _neg_gradient, _neg_blobs, _neg_warm_diffuse, _neg_cool, _neg_metal, _neg_noise]
+def _neg_redshapes():
+    """Red/orange text, strokes and small logos on varied backgrounds — thin, spread-out
+    red marks that must NOT be read as fire."""
+    img = np.full((IMG, IMG, 3), RNG.uniform(0, 255, 3), np.float32)
+    col = np.array([RNG.uniform(170, 255), RNG.uniform(0, 120), RNG.uniform(0, 95)])
+    for _ in range(RNG.integers(4, 11)):
+        if RNG.random() < 0.5:
+            y = RNG.integers(0, IMG); x0, x1 = sorted(RNG.integers(0, IMG, 2)); th = RNG.integers(1, 3)
+            img[max(0, y - th):y + th, x0:x1] = col
+        else:
+            y0, x0 = RNG.integers(0, IMG - 9, 2); hh, ww = RNG.integers(3, 10, 2)
+            img[y0:y0 + hh, x0:x0 + ww] = col
+    return _noise(img)
 
 
-def _dataset(n_pos=700, n_neg=900):
+def _neg_redsolid():
+    """Solid red/crimson filled shapes (logos, signs, banners) — saturated red but with
+    NO warm orange-yellow core, so must not be read as fire."""
+    img = np.full((IMG, IMG, 3), RNG.uniform(0, 90, 3), np.float32)
+    red = np.array([RNG.uniform(180, 255), RNG.uniform(0, 55), RNG.uniform(0, 55)])
+    if RNG.random() < 0.5:
+        y0, x0 = RNG.integers(0, IMG // 2, 2); hh, ww = RNG.integers(IMG // 6, IMG // 2, 2)
+        img[y0:y0 + hh, x0:x0 + ww] = red
+    else:
+        cx, cy = RNG.integers(IMG // 4, 3 * IMG // 4, 2); rad = RNG.integers(IMG // 6, IMG // 3)
+        yy, xx = np.ogrid[:IMG, :IMG]; m = ((xx - cx) ** 2 + (yy - cy) ** 2) < rad ** 2
+        for c in range(3):
+            img[..., c] = np.where(m, red[c], img[..., c])
+    return _noise(img)
+
+
+_POS = [_flame, _flame, _smoke]
+_NEG = [_neg_solid, _neg_gradient, _neg_blobs, _neg_warm_diffuse, _neg_cool,
+        _neg_metal, _neg_noise, _neg_redshapes, _neg_redshapes, _neg_redsolid, _neg_redsolid]
+
+
+def _dataset(n_pos=800, n_neg=1200):
     X, y = [], []
     for _ in range(n_pos):
         X.append(features(RNG.choice(_POS)())); y.append(1)

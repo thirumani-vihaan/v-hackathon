@@ -37,9 +37,13 @@ function pickVoice(locale) {
   return pool.find((v) => quality.test(v.name)) || pool[0] || null;
 }
 
-export function hasVoice(langName) { return !!pickVoice(LOCALE[langName] || "en-IN"); }
+export function hasVoice(langName) {
+  if (pickVoice(LOCALE[langName] || "en-IN")) return true;
+  return langName === "English" && _voices.length > 0;
+}
 export function voiceInfo(langName) {
-  const v = pickVoice(LOCALE[langName] || "en-IN");
+  let v = pickVoice(LOCALE[langName] || "en-IN");
+  if (!v && langName === "English" && _voices.length) v = _voices.find((x) => x.default) || _voices[0];
   return v ? v.name : "no voice installed for this language";
 }
 
@@ -54,26 +58,39 @@ function startKeepAlive() {
 function stopKeepAlive() { if (_keepAlive) { clearInterval(_keepAlive); _keepAlive = null; } }
 
 // speak(text, langName, { onStart, onEnd, onFail }). Handles async voice loading.
+// onFail fires ONLY when no voice exists for the language; when a voice is found the
+// call always succeeds (optimistic start + end safety-net), so English never falsely
+// reports "no voice" just because the browser did not fire onstart.
 export function speak(text, langName, cbs = {}) {
   const ss = window.speechSynthesis;
   if (!ss || !text) { cbs.onFail && cbs.onFail(); return; }
   const locale = LOCALE[langName] || "en-IN";
   ensureVoices().then(() => {
-    const v = pickVoice(locale);
-    if (!v) { cbs.onFail && cbs.onFail(); return; }
+    let v = pickVoice(locale);
+    // English is Latin-script: if no en voice is listed but any voice exists, use the
+    // browser default so English alerts always play.
+    if (!v && langName === "English" && _voices.length) {
+      v = _voices.find((x) => x.default) || _voices[0];
+    }
+    if (!v) { cbs.onFail && cbs.onFail(); return; }   // genuinely no voice
     stopSpeaking();
     const u = new SpeechSynthesisUtterance(text);
     u.voice = v; u.lang = v.lang; u.rate = 0.98; u.pitch = 1.0;
     let started = false, finished = false;
+    const markStart = () => { if (!started && !finished) { started = true; cbs.onStart && cbs.onStart(); } };
     const done = () => { if (finished) return; finished = true; stopKeepAlive(); cbs.onEnd && cbs.onEnd(); };
-    u.onstart = () => { started = true; cbs.onStart && cbs.onStart(); };
+    u.onstart = markStart;
     u.onend = done;
-    u.onerror = () => { if (started) done(); else { stopKeepAlive(); if (!finished) { finished = true; cbs.onFail && cbs.onFail(); } } };
+    u.onerror = done;   // a voice existed; on any error just finish (never "no voice")
     setTimeout(() => {
       ss.speak(u);
       startKeepAlive();
-      // watchdog: nothing started within 3.5s -> treat as failure so the UI resets
-      setTimeout(() => { if (!started && !ss.speaking && !finished) { finished = true; stopKeepAlive(); cbs.onFail && cbs.onFail(); } }, 3500);
+      setTimeout(markStart, 900);   // optimistic: some browsers never fire onstart
+      const poll = setInterval(() => {
+        if (finished) { clearInterval(poll); return; }
+        if (started && !ss.speaking && !ss.pending) { clearInterval(poll); done(); }
+      }, 400);
+      setTimeout(() => { clearInterval(poll); done(); }, Math.min(60000, 3000 + text.length * 90));
     }, 70);
   });
 }

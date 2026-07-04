@@ -81,7 +81,11 @@ def features(rgb: np.ndarray) -> np.ndarray:
     gx = np.abs(np.diff(V, axis=1))
     gy = np.abs(np.diff(V, axis=0))
     edge = (float((gx > 40).mean()) + float((gy > 40).mean())) / 2.0
-    feats.extend([fire_frac, local, v_std, s_mean, edge])
+    # warm-core cue: a real flame has bright orange/yellow pixels (a hot core); pure-red
+    # text/logos do not. This is the key separator of fire from red graphics.
+    core = ((H >= 10) & (H <= 30) & (S > 80) & (V > 180))
+    core_frac = float(core.sum()) / total
+    feats.extend([fire_frac, local, v_std, s_mean, edge, core_frac])
     return np.array(feats, dtype=np.float32)
 
 
@@ -141,41 +145,37 @@ def detect(image_path: str) -> VisionResult:
         hazards = []
         notes = []
 
-        # --- fire / smoke: decided by the trained model (a localized, high-contrast
-        #     flame), gated by the presence of fire-coloured pixels. Warm/colourful but
-        #     diffuse images (album covers, sunsets) score low and are not flagged. ---
+        # --- fire / smoke ONLY: decided by the trained model, gated by (a) enough
+        #     fire-coloured pixels and (b) spatial concentration. A real flame is a
+        #     filled, concentrated hot region; warm/colourful images, thin red text, and
+        #     logos are diffuse or sparse and score low. Unreliable colour heuristics for
+        #     "electrical" and "gas haze" are deliberately NOT used — they produced the
+        #     random false positives. ---
         fire_mask = (((H <= 22) | (H >= 162)) & (S > 110) & (V > 130))
         fire_frac = fire_mask.sum() / total
+        # spatial concentration: max fire density over a 4x4 grid (thin text -> low)
+        gh, gw = max(1, h // 4), max(1, w // 4)
+        local = 0.0
+        for i in range(4):
+            for j in range(4):
+                cell = fire_mask[i * gh:(i + 1) * gh, j * gw:(j + 1) * gw]
+                if cell.size:
+                    local = max(local, float(cell.mean()))
         model_p = _model_fire_prob(rgb)
         if model_p is not None:
             notes.append(f"model p(fire)={model_p:.2f}")
-        model_fire = (model_p is not None and model_p >= 0.6 and fire_frac > 0.02)
-        heuristic_fire = (model_p is None and fire_frac > 0.12)  # only if no model present
+        # warm-core presence separates a real flame from pure-red text/logos/signs
+        core_mask = ((H >= 10) & (H <= 30) & (S > 80) & (V > 180))
+        core_frac = float(core_mask.sum()) / total
+        model_fire = (model_p is not None and model_p >= 0.7
+                      and fire_frac > 0.03 and local > 0.18 and core_frac > 0.006)
+        heuristic_fire = (model_p is None and fire_frac > 0.15 and local > 0.3
+                          and core_frac > 0.01)
         if model_fire or heuristic_fire:
             conf = (model_p if model_p is not None else min(0.9, 0.5 + fire_frac * 0.4))
             conf = max(0.5, min(0.98, conf))
             bbox = _bbox_pct(fire_mask, w, h) or [10, 10, 60, 60]
             hazards.append(Hazard(type="smoke_fire", confidence=round(conf, 2),
-                                  bbox=bbox))
-
-        # --- electrical arc-flash: tight, very-bright, near-white cluster (rare) ---
-        arc_mask = (V > 248) & (S < 30)
-        arc_frac = arc_mask.sum() / total
-        if 0.003 < arc_frac < 0.04:
-            bbox = _bbox_pct(arc_mask, w, h) or [40, 40, 55, 55]
-            hazards.append(Hazard(type="electrical_hazard",
-                                  confidence=round(min(0.9, 0.45 + arc_frac * 9), 2),
-                                  bbox=bbox))
-
-        # --- gas / haze: a large, uniform low-saturation mid-bright plume with real
-        #     texture (a flat wall/gray background has near-zero variance -> not a plume) ---
-        haze_mask = (S < 38) & (V > 120) & (V < 235)
-        haze_frac = haze_mask.sum() / total
-        v_std = float(np.std(V.astype(np.float32)))
-        if 0.55 < haze_frac < 0.9 and v_std > 14:
-            bbox = _bbox_pct(haze_mask, w, h) or [0, 0, 100, 100]
-            hazards.append(Hazard(type="gas_leak_visual",
-                                  confidence=round(min(0.85, haze_frac), 2),
                                   bbox=bbox))
 
         # Precision filter: keep only confident detections, strongest first (avoid
