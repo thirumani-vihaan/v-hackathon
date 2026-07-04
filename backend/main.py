@@ -19,6 +19,14 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
+# Load .env (GEMINI_API_KEY etc.) so the backend can use Gemini vision + grounded RAG
+# when a key is present; the app transparently falls back to offline mode without one.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(_ROOT, ".env"))
+except Exception:
+    pass
+
 from fastapi import FastAPI, HTTPException, UploadFile, File  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
