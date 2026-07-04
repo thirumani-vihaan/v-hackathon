@@ -48,14 +48,40 @@ def _rgb_to_hsv(rgb: np.ndarray) -> np.ndarray:
 
 
 def features(rgb: np.ndarray) -> np.ndarray:
-    """Return a 24-d normalized HSV histogram feature vector for a whole image."""
-    hsv = _rgb_to_hsv(rgb).reshape(-1, 3).astype(np.float32)
+    """Return a 21-d feature vector describing the image for the hazard model.
+
+    Combines a coarse HSV histogram with FIRE-SPECIFIC spatial cues so that a real
+    (localized, high-contrast) flame is separable from a merely warm/colourful image
+    such as an album cover or a sunset: 16 histogram bins + fire-pixel fraction +
+    fire localisation (max fire density over a 4x4 grid) + brightness variance +
+    mean saturation + edge density.
+    """
+    hsv = _rgb_to_hsv(rgb)
+    H = hsv[..., 0].astype(np.float32)
+    S = hsv[..., 1].astype(np.float32)
+    V = hsv[..., 2].astype(np.float32)
     feats = []
-    ranges = [(0, 179), (0, 255), (0, 255)]
-    for ch in range(3):
-        hist, _ = np.histogram(hsv[:, ch], bins=_BINS, range=ranges[ch])
+    for ch, bins, hi in ((H, 8, 179), (S, 4, 255), (V, 4, 255)):
+        hist, _ = np.histogram(ch, bins=bins, range=(0, hi))
         s = hist.sum()
         feats.extend((hist / s) if s else hist)
+    total = float(H.size)
+    fire = (((H <= 22) | (H >= 162)) & (S > 110) & (V > 130))
+    fire_frac = fire.sum() / total
+    h, w = H.shape
+    gh, gw = max(1, h // 4), max(1, w // 4)
+    local = 0.0
+    for i in range(4):
+        for j in range(4):
+            cell = fire[i * gh:(i + 1) * gh, j * gw:(j + 1) * gw]
+            if cell.size:
+                local = max(local, float(cell.mean()))
+    v_std = float(np.std(V)) / 128.0
+    s_mean = float(np.mean(S)) / 255.0
+    gx = np.abs(np.diff(V, axis=1))
+    gy = np.abs(np.diff(V, axis=0))
+    edge = (float((gx > 40).mean()) + float((gy > 40).mean())) / 2.0
+    feats.extend([fire_frac, local, v_std, s_mean, edge])
     return np.array(feats, dtype=np.float32)
 
 
@@ -63,7 +89,11 @@ def _load_model():
     try:
         if os.path.isfile(_MODEL_PATH):
             d = np.load(_MODEL_PATH)
-            return d["W"].astype(np.float32), float(d["b"])
+            W = d["W"].astype(np.float32)
+            b = float(d["b"])
+            mu = d["mu"].astype(np.float32) if "mu" in d.files else None
+            sigma = d["sigma"].astype(np.float32) if "sigma" in d.files else None
+            return W, b, mu, sigma
     except Exception:
         return None
     return None
@@ -73,8 +103,13 @@ def _model_fire_prob(rgb: np.ndarray):
     m = _load_model()
     if m is None:
         return None
-    W, b = m
+    W, b, mu, sigma = m
     x = features(rgb)
+    if x.shape[0] != W.shape[0]:   # feature/model version mismatch — ignore stale model
+        return None
+    if mu is not None and sigma is not None:
+        sigma = np.where(sigma < 1e-6, 1.0, sigma)
+        x = (x - mu) / sigma
     z = float(np.dot(W, x) + b)
     return 1.0 / (1.0 + np.exp(-z))
 
@@ -106,19 +141,21 @@ def detect(image_path: str) -> VisionResult:
         hazards = []
         notes = []
 
-        # --- fire / smoke: hot red-orange, saturated, bright ---
+        # --- fire / smoke: decided by the trained model (a localized, high-contrast
+        #     flame), gated by the presence of fire-coloured pixels. Warm/colourful but
+        #     diffuse images (album covers, sunsets) score low and are not flagged. ---
         fire_mask = (((H <= 22) | (H >= 162)) & (S > 110) & (V > 130))
         fire_frac = fire_mask.sum() / total
         model_p = _model_fire_prob(rgb)
-        fire_conf = min(0.98, fire_frac * 7.0)
         if model_p is not None:
-            fire_conf = min(0.98, 0.45 * fire_conf + 0.55 * model_p)
             notes.append(f"model p(fire)={model_p:.2f}")
-        # require real fire-coloured pixels AND (heuristic or model) agreement
-        if fire_frac > 0.06 or (model_p is not None and model_p > 0.7 and fire_frac > 0.015):
+        model_fire = (model_p is not None and model_p >= 0.6 and fire_frac > 0.02)
+        heuristic_fire = (model_p is None and fire_frac > 0.12)  # only if no model present
+        if model_fire or heuristic_fire:
+            conf = (model_p if model_p is not None else min(0.9, 0.5 + fire_frac * 0.4))
+            conf = max(0.5, min(0.98, conf))
             bbox = _bbox_pct(fire_mask, w, h) or [10, 10, 60, 60]
-            hazards.append(Hazard(type="smoke_fire",
-                                  confidence=round(max(0.4, fire_conf), 2),
+            hazards.append(Hazard(type="smoke_fire", confidence=round(conf, 2),
                                   bbox=bbox))
 
         # --- electrical arc-flash: tight, very-bright, near-white cluster (rare) ---

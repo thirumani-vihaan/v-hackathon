@@ -221,16 +221,27 @@ export function EmergencyTab({ r, permits }) {
   const [disp, setDisp] = useState(null);
   const [brief, setBrief] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
+  const [vstate, setVstate] = useState("idle");   // idle | preparing | speaking
   const [note, setNote] = useState("");
   useEffect(() => { api.languages().then(setLangs).catch(() => {}); }, []);
   useEffect(() => () => stopSpeaking(), []);  // stop voice when leaving the tab
 
+  const speakText = (text, l, onFail) => {
+    setVstate("preparing");
+    speak(text, l, {
+      onStart: () => setVstate("speaking"),
+      onEnd: () => setVstate("idle"),
+      onFail: () => { setVstate("idle"); onFail && onFail(); },
+    });
+  };
   const sayAlert = (d, l) => {
     setNote("");
-    if (hasVoice(l)) { setSpeaking(true); speak(d.message, l, () => setSpeaking(false)); }
-    else if (d.english_message) { setNote(`No ${l} voice installed on this device — playing the English alert instead.`); setSpeaking(true); speak(d.english_message, "English", () => setSpeaking(false)); }
-    else setNote(`No ${l} voice available on this device (install the language pack).`);
+    speakText(d.message, l, () => {
+      if (d.english_message && l !== "English") {
+        setNote(`No ${l} voice on this device — playing the English alert instead.`);
+        speakText(d.english_message, "English", () => setNote("No speech voice available on this device."));
+      } else setNote("No speech voice available on this device.");
+    });
   };
   const run = async () => {
     if (loading) return;
@@ -243,7 +254,9 @@ export function EmergencyTab({ r, permits }) {
     setDisp(d); setBrief(b); setLoading(false);
     if (d) sayAlert(d, lang);
   };
-  const stop = () => { stopSpeaking(); setSpeaking(false); };
+  const stop = () => { stopSpeaking(); setVstate("idle"); };
+  const speaking = vstate !== "idle";
+  const vlabel = vstate === "preparing" ? "Preparing voice…" : vstate === "speaking" ? "Speaking…" : "";
   return (
     <div className="grid">
       <div className="col">
@@ -251,8 +264,9 @@ export function EmergencyTab({ r, permits }) {
           <h3>Emergency Response Orchestrator</h3>
           <div className="ctrl"><label>Alert language</label>
             <select value={lang} onChange={(e) => setLang(e.target.value)}>{langs.map((l) => <option key={l}>{l}</option>)}</select></div>
-          <button className="btn primary" style={{ width: "100%" }} onClick={run} disabled={loading}>{loading ? "Dispatching…" : "🚨 Simulate Dispatch & Speak Alert"}</button>
-          <button className="btn" style={{ width: "100%", marginTop: 8 }} onClick={stop} disabled={!speaking}>{speaking ? "⏹ Stop voice (speaking…)" : "⏹ Stop voice"}</button>
+          <button className="btn primary" style={{ width: "100%" }} onClick={run} disabled={loading || speaking}>{loading ? "Dispatching…" : "🚨 Simulate Dispatch & Speak Alert"}</button>
+          <button className="btn" style={{ width: "100%", marginTop: 8 }} onClick={stop} disabled={!speaking}>⏹ Stop voice</button>
+          {speaking && <div className="sub" style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, color: "var(--cyan)" }}><span className="spin" />{vlabel}</div>}
           <div className="sub" style={{ marginTop: 10 }}>Uses current sensor state ({r.zone}, gas {r.gas_ppm} ppm). Voice: {voiceInfo(lang)}.</div>
           {note && <div className="sub" style={{ marginTop: 6, color: "#f1c40f" }}>{note}</div>}
         </div>
@@ -261,14 +275,15 @@ export function EmergencyTab({ r, permits }) {
         {disp && <div className="card">
           <h3>Multilingual Evacuation Alert · {disp.severity}</h3>
           <div className="banner-warn" style={{ color: "#ffd8d3", fontSize: 14 }}>{disp.message}</div>
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button className="btn" onClick={() => sayAlert(disp, lang)}>🔊 Replay alert</button>
-            <button className="btn" onClick={stop} disabled={!speaking}>⏹ Stop</button></div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
+            <button className="btn" onClick={() => sayAlert(disp, lang)} disabled={speaking}>🔊 Replay alert</button>
+            <button className="btn" onClick={stop} disabled={!speaking}>⏹ Stop</button>
+            {speaking && <span className="sub" style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--cyan)" }}><span className="spin" />{vlabel}</span>}</div>
           <div className="sub" style={{ marginTop: 10 }}>Dispatched via {disp.channels.join(" · ")} · logged to tamper-evident audit trail.</div>
         </div>}
         {brief && <div className="card"><h3>Incident Briefing (voice-ready)</h3>
           <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 12.5, margin: 0, lineHeight: 1.6 }}>{brief.briefing}</pre>
-          <button className="btn" style={{ marginTop: 10 }} onClick={() => { setSpeaking(true); speak(brief.briefing, "English", () => setSpeaking(false)); }}>🔊 Read briefing</button></div>}
+          <button className="btn" style={{ marginTop: 10 }} onClick={() => speakText(brief.briefing, "English", () => setNote("No speech voice available on this device."))} disabled={speaking}>🔊 Read briefing</button></div>}
         {!disp && <div className="card sub">Run a dispatch to generate and speak the multilingual alert.</div>}
       </div>
     </div>

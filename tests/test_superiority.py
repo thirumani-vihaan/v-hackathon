@@ -21,10 +21,17 @@ from agents.vision_agent import VisionAgent  # noqa: E402
 # ---------- local (offline) vision ----------
 def _write_fire_image(path):
     from PIL import Image
-    arr = np.zeros((64, 64, 3), dtype=np.uint8)
-    arr[..., 0] = 240  # red
-    arr[..., 1] = 90   # some green -> orange/fire
-    Image.fromarray(arr).save(path)
+    # a realistic localized, high-contrast flame on a dark background (hot core -> red)
+    n = 64
+    arr = np.zeros((n, n, 3), dtype=np.float32)
+    yy, xx = np.ogrid[:n, :n]
+    d = np.sqrt((xx - 32) ** 2 + (yy - 36) ** 2)
+    inten = np.clip(1 - d / 22, 0, 1)
+    m = d < 22
+    arr[..., 0] = np.where(m, 210 + 45 * inten, 15)
+    arr[..., 1] = np.where(m, 40 + 170 * inten, 15)
+    arr[..., 2] = np.where(m, 20 * inten, 20)
+    Image.fromarray(arr.astype(np.uint8)).save(path)
 
 
 def _write_normal_image(path):
@@ -78,8 +85,10 @@ def test_trained_model_present_and_used(tmp_path):
     assert os.path.isfile(local_vision._MODEL_PATH)
     m = local_vision._load_model()
     assert m is not None
-    W, b = m
-    assert W.shape[0] == 3 * local_vision._BINS
+    W, b, mu, sigma = m
+    # model dimension matches the current feature vector
+    feat_dim = local_vision.features(np.zeros((16, 16, 3), dtype=np.uint8)).shape[0]
+    assert W.shape[0] == feat_dim
 
 
 # ---------- exposure calculator ----------
