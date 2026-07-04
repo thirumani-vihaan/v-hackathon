@@ -33,8 +33,25 @@ function pickVoice(locale) {
   const byLocale = _voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(locale.toLowerCase()));
   const byLang = _voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(lang));
   const pool = byLocale.length ? byLocale : byLang;
-  const quality = /natural|online|neural|google|premium/i;
-  return pool.find((v) => quality.test(v.name)) || pool[0] || null;
+  if (!pool.length) return null;
+  // Prefer LOCAL voices — remote/"online (natural)" voices frequently stay silent on
+  // Windows even though the engine reports "speaking", which is the muting bug.
+  const local = pool.filter((v) => v.localService);
+  const cand = local.length ? local : pool;
+  const quality = /natural|neural|premium|google/i;
+  return cand.find((v) => quality.test(v.name)) || cand[0];
+}
+
+function chunkText(text) {
+  const parts = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+  const chunks = [];
+  let cur = "";
+  for (const p of parts) {
+    if ((cur + p).length > 180) { if (cur.trim()) chunks.push(cur.trim()); cur = p; }
+    else cur += p;
+  }
+  if (cur.trim()) chunks.push(cur.trim());
+  return chunks.length ? chunks : [text];
 }
 
 export function hasVoice(langName) {
@@ -74,23 +91,26 @@ export function speak(text, langName, cbs = {}) {
     }
     if (!v) { cbs.onFail && cbs.onFail(); return; }   // genuinely no voice
     stopSpeaking();
-    const u = new SpeechSynthesisUtterance(text);
-    u.voice = v; u.lang = v.lang; u.rate = 0.98; u.pitch = 1.0;
+    const chunks = chunkText(text);
     let started = false, finished = false;
     const markStart = () => { if (!started && !finished) { started = true; cbs.onStart && cbs.onStart(); } };
     const done = () => { if (finished) return; finished = true; stopKeepAlive(); cbs.onEnd && cbs.onEnd(); };
-    u.onstart = markStart;
-    u.onend = done;
-    u.onerror = done;   // a voice existed; on any error just finish (never "no voice")
     setTimeout(() => {
-      ss.speak(u);
+      chunks.forEach((chunk, i) => {
+        const u = new SpeechSynthesisUtterance(chunk);
+        u.voice = v; u.lang = v.lang; u.rate = 0.98; u.pitch = 1.0;
+        if (i === 0) u.onstart = markStart;
+        if (i === chunks.length - 1) { u.onend = done; u.onerror = done; }
+        ss.speak(u);
+      });
+      try { ss.resume(); } catch {}   // Chrome/Edge sometimes queue-starts paused
       startKeepAlive();
-      setTimeout(markStart, 900);   // optimistic: some browsers never fire onstart
+      setTimeout(markStart, 900);      // optimistic start if onstart doesn't fire
       const poll = setInterval(() => {
         if (finished) { clearInterval(poll); return; }
         if (started && !ss.speaking && !ss.pending) { clearInterval(poll); done(); }
       }, 400);
-      setTimeout(() => { clearInterval(poll); done(); }, Math.min(60000, 3000 + text.length * 90));
+      setTimeout(() => { clearInterval(poll); done(); }, Math.min(120000, 3000 + text.length * 90));
     }, 70);
   });
 }

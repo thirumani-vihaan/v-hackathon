@@ -30,6 +30,31 @@ _PROMPT = (
 _VALID_TYPES = {"no_helmet", "smoke_fire", "unauthorized_person",
                 "unsafe_equipment", "gas_leak_visual", "electrical_hazard"}
 
+# Remember the first model that works so we don't retry all 5 on every call (which
+# burns free-tier quota and triggers the intermittent rate-limit fallbacks).
+_WORKING_MODEL = {"name": None}
+
+
+def _resp_text(resp) -> str:
+    """Extract text from a Gemini response without raising (resp.text can throw when a
+    candidate has no simple text part)."""
+    try:
+        t = getattr(resp, "text", None)
+        if t:
+            return t
+    except Exception:
+        pass
+    try:
+        out = []
+        for c in getattr(resp, "candidates", []) or []:
+            content = getattr(c, "content", None)
+            for p in getattr(content, "parts", []) or []:
+                if getattr(p, "text", None):
+                    out.append(p.text)
+        return "".join(out)
+    except Exception:
+        return ""
+
 
 def _fallback(image_path: str, error: str = None) -> VisionResult:
     """Deterministic conservative fallback used when Gemini is unavailable."""
@@ -79,6 +104,7 @@ def analyze_image(image_path: str) -> VisionResult:
         return _fallback(image_path, error=f"image not found: {image_path}")
 
     try:
+        import time
         import google.generativeai as genai
         genai.configure(api_key=api_key)
         with open(image_path, "rb") as f:
@@ -86,16 +112,37 @@ def analyze_image(image_path: str) -> VisionResult:
         ext = os.path.splitext(image_path)[1].lower().lstrip(".") or "jpeg"
         mime = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext}"
         image_part = {"mime_type": mime, "data": img_bytes}
+        gen_cfg = {"response_mime_type": "application/json"}
+
+        # Try the last known-good model first; only fall through to others if it fails.
+        order = ([_WORKING_MODEL["name"]] if _WORKING_MODEL["name"] else [])
+        order += [m for m in MODELS if m != _WORKING_MODEL["name"]]
 
         last_err = None
-        for model_name in MODELS:
-            try:
-                model = genai.GenerativeModel(model_name)
-                resp = model.generate_content([_PROMPT, image_part])
-                return _parse_response(resp.text)
-            except Exception as e:  # noqa: BLE001
-                last_err = f"{model_name}: {e}"
-                continue
+        for model_name in order:
+            for attempt in range(2):
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    try:
+                        resp = model.generate_content([_PROMPT, image_part],
+                                                      generation_config=gen_cfg)
+                    except Exception:
+                        resp = model.generate_content([_PROMPT, image_part])
+                    txt = _resp_text(resp)
+                    if not txt.strip():
+                        raise ValueError("empty response")
+                    result = _parse_response(txt)
+                    _WORKING_MODEL["name"] = model_name
+                    return result
+                except Exception as e:  # noqa: BLE001
+                    last_err = f"{model_name}: {e}"
+                    msg = str(e).lower()
+                    if attempt == 0 and ("429" in msg or "quota" in msg
+                                         or "rate" in msg or "503" in msg
+                                         or "unavailable" in msg):
+                        time.sleep(1.6)   # transient — retry the SAME model once
+                        continue
+                    break                 # non-transient — move to next model
         return _fallback(image_path, error=f"all models failed: {last_err}")
     except Exception as e:  # noqa: BLE001
         return _fallback(image_path, error=str(e))
