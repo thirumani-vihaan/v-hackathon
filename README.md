@@ -49,8 +49,8 @@ IndustrialSafetyAI is a production-grade, offline-capable process-safety intelli
 - **Emergency Dispatch** — multilingual spoken evacuation message, live sensor stream, risk-trend chart, time-to-critical estimate.
 - **Reporting & audit** — PDF incident package + downloadable evidence ZIP + append-only JSONL evidence log (secrets sanitized).
 - **True offline path** — local CV + cached embeddings + deterministic compliance.
-- **Tested** — **126 pytest + 16 authoritative acceptance tasks** (142 total, all green).
-- **UI** — Streamlit, 7 interactive tabs, real uploads, live map, benchmark.
+- **Tested** — **131 pytest + 16 authoritative acceptance tasks** (147 total, all green).
+- **UI** — a polished **React/Vite dark-industrial command center** on a warm FastAPI backend (real-time, ~20ms scans), plus an all-in-one Streamlit app.
 
 ---
 
@@ -118,21 +118,27 @@ v/
 
 ## ⚡ Quick start
 
+**Option A — the React command center (recommended: fast + polished):**
+
 ```powershell
 cd $env:USERPROFILE\Desktop\v
-.\venv\Scripts\activate           # Python 3.11 venv
-pip install -r requirements.txt   # (already installed; lockfile: requirements.lock.txt)
+# 1. warm FastAPI backend (loads once, serves ~20ms scans; RAG lazy-loads on first use)
+.\venv\Scripts\python.exe -m uvicorn backend.main:app --port 8000
 
-# optional: enable Gemini (vision synthesis + live translation)
-copy .env.example .env            # then add GEMINI_API_KEY
+# 2. in a second terminal — the React dashboard
+cd frontend
+npm install        # first time only
+npm run build && npm run preview   # http://localhost:5173  (dev: npm run dev)
+```
 
-# train the offline hazard model (seconds, CPU, no download)
-python models\train_hazard_model.py
+**Option B — the all-in-one Streamlit app:**
 
-# launch the UI
-streamlit run ui\app.py --server.port 8502
+```powershell
+.\venv\Scripts\python.exe -m streamlit run ui\app.py --server.port 8502
 # open http://localhost:8502
 ```
+
+**One-command offline demo (no browser):** `python -m tools.judge_demo`
 
 **Runs with or without a network / API key.** No key → the system uses real offline
 computer vision, deterministic compliance, and extractive RAG.
