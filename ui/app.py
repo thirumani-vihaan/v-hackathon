@@ -253,6 +253,12 @@ with tab_dash:
         st.session_state["last_result"] = result
         st.session_state["risk_history"].append(result.safety.risk_score)
         with result_box:
+            from utils.risk_banner import risk_banner_html, risk_meter_html
+            st.markdown(risk_banner_html(result.safety.risk_score,
+                        result.compliance.highest_severity),
+                        unsafe_allow_html=True)
+            st.markdown(risk_meter_html(result.safety.risk_score),
+                        unsafe_allow_html=True)
             m = st.columns(4)
             m[0].metric("Risk score", f"{result.safety.risk_score}/100")
             m[1].metric("Compliance",
