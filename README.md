@@ -155,7 +155,9 @@ flowchart TD
 | **Compound risk** | Graduated continuous 0–100 with per-factor breakdown (live) **+** an auditable rule engine (benchmark); maintenance & shift-changeover escalations. |
 | **Prediction** | Trajectory forecasting → minutes-to-threshold; live predictive stream. |
 | **Counterfactual** | Ranks the single action (revoke permit / ventilate / purge) that most reduces risk, with before/after scores. |
-| **Vision** | Gemini multi-hazard scene understanding online; retrained offline model detects fire/smoke accurately (no false positives on red text / logos / album images). |
+| **Vision** | Gemini multi-hazard scene understanding online; **custom-trained PyTorch ML Head on 768-dim Vision Transformer (ViT) embeddings** offline (zero label string-matching). |
+| **Agentic Action**| True LangChain ReAct loop equipped with multi-tool calling (RAG manual + TSDB history + MQTT) to autonomously investigate and confirm hazards before shutdown. |
+| **Edge Persistence**| SQLite Time-Series Database (TSDB) for high-throughput IoT sensor ingestion and sliding-window forecasting, surviving server crashes. |
 | **Compliance** | 20 deterministic rules, each cross-referenced to **OISD + Factory Act 1948 + DGMS**. |
 | **Grounded RAG** | ChromaDB + MiniLM over OISD/Factory Act/DGMS; Gemini synthesis online, sentence-ranked extractive offline; cited, honest. |
 | **Knowledge graph** | Permit-proximity intelligence — flags ignition/intrusive permits in/adjacent to elevated-gas zones. |
@@ -175,8 +177,9 @@ flowchart TD
 | :-- | :-- |
 | Frontend | React 18 · Vite · Leaflet · Web-Speech TTS (deps kept minimal) |
 | Backend | FastAPI · Uvicorn · Pydantic (warm, lazy-loaded heavy stack) |
-| Agents | LangGraph `StateGraph` · typed dataclass contract |
-| ML / CV | scikit-style logistic model · OpenCV · NumPy · sentence-transformers (MiniLM) |
+| Database | **SQLite3 Edge TSDB** (Zone telemetry & sliding-window history) |
+| Agents | LangGraph `StateGraph` · **LangChain ReAct Multi-Tool Agent** |
+| ML / CV | **HuggingFace ViT pooler embeddings** · Custom PyTorch MLP · OpenCV · sentence-transformers (MiniLM) |
 | RAG | ChromaDB (persistent) · `all-MiniLM-L6-v2` |
 | Cloud (optional) | Google Gemini (`gemini-2.5-flash` …) — vision + grounded synthesis |
 | Quality | 139 pytest · 16 authoritative acceptance tasks · headless UI tests |
