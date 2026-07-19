@@ -436,6 +436,15 @@ export function BenchmarkTab() {
   const miss = (d) => (d ? `${d.operational_false_negatives} / ${d.incidents}` : "—");
   return (
     <div className="col">
+      {h && h.financial_impact && (
+        <div className="card" style={{ padding: 16, background: "rgba(46, 204, 113, 0.1)", border: "1px solid #2ecc71", borderRadius: 8, marginBottom: 0 }}>
+          <h3 style={{ color: "#2ecc71", marginTop: 0, marginBottom: 8 }}>₹ Financial ROI Model</h3>
+          <div className="sub" style={{ lineHeight: 1.5, color: "#e2e8f0" }}>
+            The <b>{h.false_negative_reduction_pct}% reduction</b> in operational false negatives prevented <b>{h.incidents_avoided_in_sample} major incidents</b> in this sample. 
+            Estimated total cost and compliance liability avoided: <strong style={{ fontSize: "1.1em" }}>{h.financial_impact.formatted_impact}</strong>.
+          </div>
+        </div>
+      )}
       <div className="card">
         <h3>How We Tested</h3>
         <div className="sub" style={{ lineHeight: 1.65 }}>

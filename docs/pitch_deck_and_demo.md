@@ -63,10 +63,10 @@ can audit every alert. (Roadmap: Factory Act + DGMS.) Determinism = compliance f
 On trigger: multilingual spoken evacuation alert, evidence preserved (ZIP + JSONL),
 regulatory-format incident PDF auto-generated. Chaos → coordinated response.
 
-**Slide 11 — Scalability & moat**
+**Slide 11 — Scalability, Moat, & Scope**
 Stateless agents, plant-agnostic config, ingestion-adapter-ready for SCADA/IoT.
-**Fully offline** — kills every cloud-dependent competitor and every air-gapped-plant
-objection.
+**Fully offline** — kills every cloud-dependent competitor and every air-gapped-plant objection.
+*Reframing the scope:* This isn't scope creep; it's a **production-shaped platform**. Where competitors rely on a single sharp mechanism (e.g., just LLMs), we provide multimodal breadth (vision, geospatial, edge TSDB, multilingual Voice) over that mechanism because true zero-harm safety requires it.
 
 **Slide 12 — Ask / impact close**
 "6,500 preventable deaths a year. We cut the metric that causes them by 80 points,

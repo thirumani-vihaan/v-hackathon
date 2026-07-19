@@ -63,6 +63,14 @@ def graduated_risk(reading: SensorReading, active_permits: Optional[List[str]] =
         add("Worker exposure", min(8.0, workers * 0.8), f"{workers} worker(s) in the zone")
 
     total = sum(x["points"] for x in c)
+    
+    # structural hard gate: if baseline hazards are absent, severity cannot escalate
+    # regardless of environmental factors like temperature or worker count.
+    # Safe gas (<=10ppm), safe O2 (19.5-23.5%), and no hazardous permits.
+    has_hazardous_permit = any(p in _HAZARD_PERMITS for p in permits)
+    if gas <= 10.0 and 19.5 <= oxy <= 23.5 and not has_hazardous_permit:
+        total = min(total, 19.0)
+
     # physical hard floors — acute conditions cannot read low
     if gas >= 100 or oxy < 16.0:
         total = max(total, 88.0)

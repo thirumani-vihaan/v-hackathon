@@ -115,6 +115,12 @@
     "single_sensor_operational_false_negative_rate": 0.808,
     "compound_predictive_operational_false_negative_rate": 0.0,
     "false_negative_reduction_pct": 80.8,
+    "incidents_avoided_in_sample": 21,
+    "financial_impact": {
+      "currency": "INR",
+      "cost_avoidance": 126000000,
+      "formatted_impact": "\u20b9126,000,000"
+    },
     "compound_median_lead_minutes": 19.0,
     "single_high_false_alarm_rate": 0.0,
     "single_low_false_alarm_rate": 1.0,

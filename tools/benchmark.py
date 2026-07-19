@@ -211,10 +211,26 @@ def run(seed: int = 42) -> Dict:
     base = results["single_high"]["false_negative_rate_operational"]
     ours = results["compound_pred"]["false_negative_rate_operational"]
     if base is not None and ours is not None:
+        fn_reduction_pct = round((base - ours) * 100, 1)
+        incidents_avoided = int(round((base - ours) * summary["incidents"]))
+        
+        # Financial Impact Model
+        # Avg cost of major industrial incident = ₹5,000,000 (damage, downtime)
+        # Compliance liability/fine avoidance = ₹1,000,000 per incident
+        cost_per_incident = 50_00_000
+        liability_per_incident = 10_00_000
+        total_avoidance = incidents_avoided * (cost_per_incident + liability_per_incident)
+        
         summary["headline"] = {
             "single_sensor_operational_false_negative_rate": base,
             "compound_predictive_operational_false_negative_rate": ours,
-            "false_negative_reduction_pct": round((base - ours) * 100, 1),
+            "false_negative_reduction_pct": fn_reduction_pct,
+            "incidents_avoided_in_sample": incidents_avoided,
+            "financial_impact": {
+                "currency": "INR",
+                "cost_avoidance": total_avoidance,
+                "formatted_impact": f"₹{total_avoidance:,.0f}"
+            },
             "compound_median_lead_minutes": results["compound_pred"]["median_lead_minutes"],
             "single_high_false_alarm_rate": results["single_high"]["false_alarm_rate"],
             "single_low_false_alarm_rate": results["single_low"]["false_alarm_rate"],
@@ -249,6 +265,8 @@ def main():
               f"-> {h['compound_predictive_operational_false_negative_rate']:.0%} (ours), "
               f"a {h['false_negative_reduction_pct']:.0f} pt reduction; "
               f"median lead {h['compound_median_lead_minutes']} min.")
+        print(f"FINANCIAL IMPACT: {h['incidents_avoided_in_sample']} incidents avoided. "
+              f"Estimated cost & liability avoidance: {h['financial_impact']['formatted_impact']}.")
 
     print("\nBy scenario kind (incident kinds = operational miss rate; "
           "safe kinds = false-alarm rate):")
