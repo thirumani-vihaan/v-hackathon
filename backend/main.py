@@ -32,6 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
+import paho.mqtt.publish as mqtt_publish  # noqa: E402
 
 # Light imports only (no torch/chromadb here).
 from schema import (SensorReading, SensorInput, ComplianceInput, QueryInput,  # noqa: E402
@@ -191,6 +192,21 @@ def scan(req: ScanRequest):
                           "compound_fires": grad["score"] >= 50},
         "forecast": forecast
     }
+
+    # Close the Loop: Autonomously publish MQTT shutdown if risk is CRITICAL
+    if grad["score"] >= 80 or (forecast and forecast.get("minutes_to_gas_idlh") is not None and forecast.get("minutes_to_gas_idlh") <= 5.0):
+        try:
+            mqtt_publish.single(
+                "vhackathon/actuator/shutdown", 
+                payload=f'{{"zone": "{reading.zone}", "reason": "CRITICAL_RISK", "score": {grad["score"]}}}',
+                hostname="test.mosquitto.org"
+            )
+            result["actuation"] = "SHUTDOWN_COMMAND_ISSUED"
+        except Exception as e:
+            result["actuation"] = f"SHUTDOWN_FAILED: {e}"
+    else:
+        result["actuation"] = "NONE"
+
     event_data = {
         "type": "api_scan", 
         "risk_score": grad["score"],

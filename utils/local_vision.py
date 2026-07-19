@@ -9,10 +9,15 @@ fire/smoke score. Always returns a schema VisionResult (source='fallback').
 import os
 import numpy as np
 
+import torch
+import torch.nn as nn
+
 from schema import VisionResult, Hazard
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_MODEL_PATH = os.path.join(_ROOT, "models", "hazard_model.npz")
+_MODEL_PATH = os.path.join(_ROOT, "models", "hazard_model.pt")
+
+_mlp_cache = None
 
 # HSV feature: 3 channels x 8 bins = 24-d normalized histogram.
 _BINS = 8
@@ -90,14 +95,26 @@ def features(rgb: np.ndarray) -> np.ndarray:
 
 
 def _load_model():
+    global _mlp_cache
+    if _mlp_cache is not None:
+        return _mlp_cache
     try:
         if os.path.isfile(_MODEL_PATH):
-            d = np.load(_MODEL_PATH)
-            W = d["W"].astype(np.float32)
-            b = float(d["b"])
-            mu = d["mu"].astype(np.float32) if "mu" in d.files else None
-            sigma = d["sigma"].astype(np.float32) if "sigma" in d.files else None
-            return W, b, mu, sigma
+            d = torch.load(_MODEL_PATH, weights_only=True)
+            mu = d["mu"]
+            sigma = d["sigma"]
+            model = nn.Sequential(
+                nn.Linear(len(mu), 32),
+                nn.ReLU(),
+                nn.Linear(32, 16),
+                nn.ReLU(),
+                nn.Linear(16, 1),
+                nn.Sigmoid()
+            )
+            model.load_state_dict(d['model_state'])
+            model.eval()
+            _mlp_cache = (model, mu, sigma)
+            return _mlp_cache
     except Exception:
         return None
     return None
@@ -107,15 +124,16 @@ def _model_fire_prob(rgb: np.ndarray):
     m = _load_model()
     if m is None:
         return None
-    W, b, mu, sigma = m
+    model, mu, sigma = m
     x = features(rgb)
-    if x.shape[0] != W.shape[0]:   # feature/model version mismatch — ignore stale model
+    if x.shape[0] != len(mu):
         return None
-    if mu is not None and sigma is not None:
-        sigma = np.where(sigma < 1e-6, 1.0, sigma)
-        x = (x - mu) / sigma
-    z = float(np.dot(W, x) + b)
-    return 1.0 / (1.0 + np.exp(-z))
+    sigma = np.where(sigma < 1e-6, 1.0, sigma)
+    x = (x - mu) / sigma
+    with torch.no_grad():
+        t = torch.tensor(x, dtype=torch.float32).unsqueeze(0)
+        prob = model(t).item()
+    return prob
 
 
 def _bbox_pct(mask: np.ndarray, w: int, h: int):

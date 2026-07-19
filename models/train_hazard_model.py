@@ -14,6 +14,9 @@ Run:  python models/train_hazard_model.py
 import os
 import sys
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
@@ -22,7 +25,7 @@ if _ROOT not in sys.path:
 from utils.local_vision import features  # noqa: E402
 
 RNG = np.random.default_rng(42)
-OUT = os.path.join(_ROOT, "models", "hazard_model.npz")
+OUT = os.path.join(_ROOT, "models", "hazard_model.pt")
 IMG = 56
 
 
@@ -155,15 +158,31 @@ def _dataset(n_pos=800, n_neg=1200):
     return np.array(X, np.float32), np.array(y, np.float32)
 
 
-def _train(X, y, epochs=800, lr=0.4, l2=2e-3):
+def _train_mlp(X, y, epochs=1500, lr=0.01):
     n, d = X.shape
-    W, b = np.zeros(d, np.float32), 0.0
+    model = nn.Sequential(
+        nn.Linear(d, 32),
+        nn.ReLU(),
+        nn.Linear(32, 16),
+        nn.ReLU(),
+        nn.Linear(16, 1),
+        nn.Sigmoid()
+    )
+    
+    criterion = nn.BCELoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    
+    Xt = torch.tensor(X, dtype=torch.float32)
+    yt = torch.tensor(y, dtype=torch.float32).unsqueeze(1)
+    
     for _ in range(epochs):
-        p = 1.0 / (1.0 + np.exp(-(X @ W + b)))
-        W -= lr * (X.T @ (p - y) / n + l2 * W)
-        b -= lr * float(np.mean(p - y))
-    return W, b
-
+        optimizer.zero_grad()
+        p = model(Xt)
+        loss = criterion(p, yt)
+        loss.backward()
+        optimizer.step()
+        
+    return model
 
 def main():
     X, y = _dataset()
@@ -174,13 +193,22 @@ def main():
     idx = RNG.permutation(len(y))
     cut = int(0.8 * len(y))
     tr, te = idx[:cut], idx[cut:]
-    W, b = _train(Xs[tr], y[tr])
-    pte = 1.0 / (1.0 + np.exp(-(Xs[te] @ W + b)))
+    
+    model = _train_mlp(Xs[tr], y[tr])
+    
+    with torch.no_grad():
+        pte = model(torch.tensor(Xs[te], dtype=torch.float32)).squeeze().numpy()
+        
     acc = float(np.mean((pte > 0.5) == (y[te] > 0.5)))
-    np.savez(OUT, W=W.astype(np.float32), b=np.float32(b),
-             mu=mu.astype(np.float32), sigma=sigma.astype(np.float32),
-             accuracy=np.float32(acc))
-    print(f"Trained hazard model: {len(y)} samples ({int(y.sum())} pos / "
+    
+    torch.save({
+        'model_state': model.state_dict(),
+        'mu': mu.astype(np.float32),
+        'sigma': sigma.astype(np.float32),
+        'accuracy': np.float32(acc)
+    }, OUT)
+    
+    print(f"Trained PyTorch MLP hazard model: {len(y)} samples ({int(y.sum())} pos / "
           f"{int(len(y) - y.sum())} neg), held-out accuracy {acc:.3f} -> {OUT}")
 
 
