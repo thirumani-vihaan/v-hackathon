@@ -1,6 +1,6 @@
 """Sensor simulator: produce SensorReading objects for scenarios/tests."""
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 from schema import SensorReading
 
@@ -18,7 +18,7 @@ def generate_sensor_reading(scenario: str = "normal") -> dict:
 
     Supported scenarios: 'normal', 'gas_spike', 'confined_space', 'electrical'.
     """
-    ts = datetime.utcnow().isoformat()
+    ts = datetime.now(timezone.utc).isoformat()
     if scenario == "gas_spike":
         reading = SensorReading(
             gas_ppm=round(random.uniform(85, 130), 1),
@@ -70,33 +70,26 @@ def generate_sensor_reading(scenario: str = "normal") -> dict:
 def normal_reading(zone: str = "Zone-A-Tank-Farm") -> SensorReading:
     """A safe, nominal reading (no rules should fire)."""
     return SensorReading(
-        gas_ppm=5.0,
-        temp_c=32.0,
-        oxygen_pct=20.9,
-        humidity_pct=55.0,
-        permit_type="general",
-        worker_count=2,
-        zone=zone,
-        timestamp=datetime.utcnow().isoformat(),
-        pressure_bar=1.013,
-        rescue_team_present=True,
+        gas_ppm=5.0, temp_c=30.0, oxygen_pct=20.9, humidity_pct=50.0,
+        permit_type="general", worker_count=2, zone="Zone-A-Tank-Farm",
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        pressure_bar=1.013, rescue_team_present=True
     )
 
 
 def vizag_critical_reading() -> SensorReading:
-    """Recreates a Vizag-style gas-leak emergency: high gas + oxygen displacement
-    during hot work. Should produce CRITICAL compliance and risk_score >= 80."""
+    """Simulates the Visakhapatnam leak: high gas + confined space + hot work + low O2."""
     return SensorReading(
-        gas_ppm=120.0,
-        temp_c=41.0,
-        oxygen_pct=18.4,
-        humidity_pct=70.0,
+        gas_ppm=120.0,      # IDLH
+        temp_c=41.0,        # extreme heat
+        oxygen_pct=18.4,    # deficiency
+        humidity_pct=85.0,
         permit_type="hot_work",
         worker_count=4,
-        zone="Zone-A-Tank-Farm",
-        timestamp=datetime.utcnow().isoformat(),
-        pressure_bar=1.02,
-        rescue_team_present=True,
+        zone="Zone-C-Confined",
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        pressure_bar=1.013,
+        rescue_team_present=False
     )
 
 
@@ -113,7 +106,7 @@ def escalating_readings(n: int = 4) -> list:
             permit_type="hot_work" if frac > 0.5 else "general",
             worker_count=2 + i,
             zone="Zone-A-Tank-Farm",
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             pressure_bar=1.013,
             rescue_team_present=True,
         ))
@@ -131,7 +124,7 @@ def random_reading(seed: int = None) -> SensorReading:
         permit_type=random.choice(PERMIT_TYPES),
         worker_count=random.randint(0, 12),
         zone=random.choice(ZONES),
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(timezone.utc).isoformat(),
         pressure_bar=round(random.uniform(0.85, 2.2), 3),
         rescue_team_present=random.choice([True, False]),
     )

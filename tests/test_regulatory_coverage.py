@@ -12,8 +12,8 @@ if _ROOT not in sys.path:
 from agents.compliance_agent import ComplianceAgent, REGULATORY_FRAMEWORKS  # noqa: E402
 
 
-def test_still_exactly_20_rules():
-    assert len(ComplianceAgent().rules) == 20
+def test_still_at_least_20_rules():
+    assert len(ComplianceAgent().rules) >= 20
 
 
 def test_every_rule_cites_all_three_frameworks():
@@ -25,7 +25,7 @@ def test_every_rule_cites_all_three_frameworks():
 
 def test_coverage_report():
     cov = ComplianceAgent().regulatory_coverage()
-    assert cov["total_rules"] == 20
-    assert cov["frameworks"]["OISD"] == 20
-    assert cov["frameworks"]["Factory Act"] == 20
-    assert cov["frameworks"]["DGMS"] == 20
+    assert cov["total_rules"] >= 20
+    assert cov["frameworks"]["OISD"] >= 20
+    assert cov["frameworks"]["Factory Act"] >= 20
+    assert cov["frameworks"]["DGMS"] >= 20

@@ -156,6 +156,10 @@ def _prewarm_knowledge():
             if not os.path.isdir(vit_path):
                 subprocess.Popen([sys.executable, os.path.join(_ROOT, "models", "download_vit.py")]).wait()
                 subprocess.Popen([sys.executable, os.path.join(_ROOT, "models", "train_vit_head.py")]).wait()
+            # Ensure ChromaDB is built if missing
+            db_path = os.path.join(_ROOT, "knowledge_base", "chroma_db")
+            if not os.path.isdir(db_path):
+                subprocess.Popen([sys.executable, os.path.join(_ROOT, "knowledge_base", "build_db.py")]).wait()
             # Launch MQTT listener in background
             subprocess.Popen([sys.executable, os.path.join(_ROOT, "backend", "mqtt_listener.py")])
         except Exception as e:

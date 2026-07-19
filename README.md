@@ -189,6 +189,7 @@ flowchart TD
 ## ⚡ Quick start
 
 ```powershell
+# Windows PowerShell
 cd $env:USERPROFILE\Desktop\v
 # Windows: always set UTF-8; offline embeddings avoid HF hub hangs
 $env:PYTHONUTF8=1; $env:PYTHONIOENCODING="utf-8"; $env:HF_HUB_OFFLINE=1; $env:TRANSFORMERS_OFFLINE=1
@@ -198,6 +199,18 @@ cd frontend; npm install; npm run build; cd ..
 
 # 2) run the warm backend — it serves BOTH the UI and the API
 .\venv\Scripts\python.exe -m uvicorn backend.main:app --port 8000
+#    → open http://localhost:8000   (API at /api/*, docs at /docs)
+```
+```bash
+# Mac/Linux bash
+cd ~/Desktop/v
+export PYTHONUTF8=1 PYTHONIOENCODING="utf-8" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+
+# 1) build the React command center (once)
+cd frontend && npm install && npm run build && cd ..
+
+# 2) run the warm backend — it serves BOTH the UI and the API
+./venv/bin/python -m uvicorn backend.main:app --port 8000
 #    → open http://localhost:8000   (API at /api/*, docs at /docs)
 ```
 
@@ -233,10 +246,18 @@ device) · **Emergency** (multilingual voice dispatch + briefing) · **Safety To
 ## ✅ Testing
 
 ```powershell
+# Windows PowerShell
 python -m pytest -q                                             # ~139 tests, offline-deterministic
 for($i=1;$i -le 16;$i++){ python tools\accept.py ("T{0:D3}" -f $i) }   # 16 acceptance tasks
 python -m tools.benchmark                                       # the compound-vs-single benchmark
 python tools\ui_apptest.py                                      # headless Streamlit UI
+```
+```bash
+# Mac/Linux bash
+./venv/bin/python -m pytest -q
+for i in {1..16}; do ./venv/bin/python tools/accept.py "T$(printf "%03d" $i)"; done
+./venv/bin/python -m tools.benchmark
+./venv/bin/python tools/ui_apptest.py
 ```
 
 All checks pass. Tests require no network.

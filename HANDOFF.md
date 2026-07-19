@@ -58,21 +58,35 @@ legacy all-in-one that still passes its headless tests. Keep both working.
 ## 3. Run it
 
 ```powershell
+# Windows PowerShell
 cd $env:USERPROFILE\Desktop\v
 # venv is at .\venv (Python 3.11). ALWAYS set UTF-8 on this Windows console.
 $env:PYTHONUTF8=1; $env:PYTHONIOENCODING="utf-8"; $env:HF_HUB_OFFLINE=1; $env:TRANSFORMERS_OFFLINE=1
+```
+```bash
+# Mac/Linux bash
+cd ~/Desktop/v
+export PYTHONUTF8=1 PYTHONIOENCODING="utf-8" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+```
 
 # --- React command center (recommended) ---
-cd frontend; npm install; npm run build; cd ..          # build once
+# Build once:
+# cd frontend && npm install && npm run build && cd ..
+
+# Run backend (Windows):
 .\venv\Scripts\python.exe -m uvicorn backend.main:app --port 8000
+# Run backend (Mac/Linux):
+./venv/bin/python -m uvicorn backend.main:app --port 8000
 #   open http://localhost:8000/   (UI at /, API at /api/*, docs at /docs)
 #   frontend hot-reload dev: cd frontend && npm run dev  (proxies /api to :8000)
 
 # --- OR the all-in-one Streamlit app ---
-.\venv\Scripts\python.exe -m streamlit run ui\app.py --server.port 8502
+# Windows: .\venv\Scripts\python.exe -m streamlit run ui\app.py --server.port 8502
+# Mac/Linux: ./venv/bin/python -m streamlit run ui/app.py --server.port 8502
 
 # --- One-command offline narrated demo (no browser) ---
-.\venv\Scripts\python.exe -m tools.judge_demo
+# Windows: .\venv\Scripts\python.exe -m tools.judge_demo
+# Mac/Linux: ./venv/bin/python -m tools.judge_demo
 ```
 
 **Gemini (optional, big accuracy boost):** put `GEMINI_API_KEY=...` in `.env` (already
@@ -87,12 +101,22 @@ fully functional offline / air-gapped") is the strongest pitch — keep the fall
 ## 4. Test it (all must stay green)
 
 ```powershell
+# Windows PowerShell
 $env:PYTHONUTF8=1; $env:PYTHONIOENCODING="utf-8"; $env:HF_HUB_OFFLINE=1; $env:TRANSFORMERS_OFFLINE=1
 .\venv\Scripts\python.exe -m pytest -q                       # ~139 tests
 for($i=1;$i -le 16;$i++){ .\venv\Scripts\python.exe tools\accept.py ("T{0:D3}" -f $i) }  # 16 authoritative acceptance tasks
 .\venv\Scripts\python.exe tools\ui_apptest.py                # headless Streamlit UI (8 tabs)
 .\venv\Scripts\python.exe -m tools.benchmark                 # the compound-vs-single benchmark
 cd frontend; npm run build                                   # frontend must build clean
+```
+```bash
+# Mac/Linux bash
+export PYTHONUTF8=1 PYTHONIOENCODING="utf-8" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+./venv/bin/python -m pytest -q
+for i in {1..16}; do ./venv/bin/python tools/accept.py "T$(printf "%03d" $i)"; done
+./venv/bin/python tools/ui_apptest.py
+./venv/bin/python -m tools.benchmark
+cd frontend && npm run build
 ```
 
 Current status: **139 pytest + 16 acceptance all green.** Frontend builds clean
@@ -183,9 +207,7 @@ types; the orchestrator converts loose dicts → typed inputs before calling age
 - `utils/interventions.py` (rule-engine) and `risk_model.rank_interventions` (graduated) —
   counterfactual "which action most reduces risk" ranking.
 - `utils/limit_check.py` — measured-vs-regulatory-limit utilisation (direction-aware).
-- `agents/compliance_agent.py` + `compliance/safety_rules.json` — 20 deterministic rules
-  (R001-R020), **each cross-referenced to OISD + Factory Act 1948 + DGMS**. `len==20` is
-  asserted — keep exactly 20 rules.
+- `agents/compliance_agent.py` + `compliance/safety_rules.json` — currently 20 deterministic rules (R001-R020), **each cross-referenced to OISD + Factory Act 1948 + DGMS**. New rules can be added as long as they follow this structure.
 - `utils/audit_logger.py` — **tamper-evident SHA-256 hash-chained** evidence log with
   `verify_chain()` (legacy entries tolerated). Never logs secrets.
 - `agents/output_agent.py` + `utils/translations.py` — multilingual (10 languages)
@@ -250,7 +272,7 @@ minimal: react, vite, leaflet. Stable page (no ambient motion). `npm run build` 
 1. `schema.py` immutable; no new dataclasses; agents return schema dataclasses.
 2. Orchestrator LangGraph nodes return **update dicts only**; `route_`-prefixed node names
    (must not collide with state keys); compile once, invoke per request.
-3. **ComplianceAgent stays deterministic** (no LLM). 20 rules exactly.
+3. **ComplianceAgent stays deterministic** (no LLM). Rules must be hardcoded and deterministic.
 4. **No test-gaming** — real generalizing logic; the benchmark ground truth is physics.
 5. Agents never let exceptions escape — return a valid dataclass with `.error` set.
 6. The pinned compound-scoring base (CLAUDE.md §10) must keep producing the exact values
@@ -260,22 +282,19 @@ minimal: react, vite, leaflet. Stable page (no ambient motion). `npm run build` 
 
 ## 9. Competitive landscape (for the re-scan before deadline)
 The user plans to re-analyze competitor repos near the deadline and integrate new ideas.
-**Primary PS1 competitors analyzed earlier:**
-- `theAdityaNVS/ET-AI-Hackathon-2026` ("SafeLayer") — polished React/FastAPI UI but the
-  AI was **hardcoded** (no real model); no RAG/CV/tests. Strength: UI + Vizag narrative.
-- `itsmeericroshan/sentinel` — real Bayesian causal model + agent-variance novelty signal,
-  but **fake geospatial (CSS grid), 4-sentence RAG, no CV, no tests**. Strength:
-  counterfactual "revoke permit → risk drops" + replay.
-- `J-Rakshitha/SafeGuardAI` — actually **PS6 (fraud)**, not a PS1 competitor.
-**Secondary (pattern donors):** `Leela0o5/LML` (mature cloud knowledge platform;
-evidence/uncertainty score idea → our confidence engine), `huntermarchi/...KernelSentinel`
-(SHA-256 chained audit → we adopted it; rolling σ baseline), `LakshmanKumarGupta/
-industrial-knowledge-copilot` (structured citations), `sustik78/Urban_Air_Quality...`
-(measured-vs-limit chart → adopted; role advisory tabs).
+When re-scanning other PS1 repositories, focus purely on technical architecture and patterns to learn from:
+- Watch for teams using sophisticated causal models or agent-variance novelty signals.
+- Check if others are employing genuine real-time computer vision models.
+- Look out for how others approach offline RAG capabilities.
+- Note any strong UI/UX choices, particularly in geospatial visualization.
 
-**Our verdict:** we lead decisively on real AI depth, tests, offline, benchmark, and now
-UI+speed (React + warm FastAPI). Both real competitors are demo shells hollow on depth.
-When re-scanning: watch for whether they've wired real AI, added CV, or deployed live URLs.
+**Patterns we have successfully adopted from others:** 
+- Evidence/uncertainty score ideas (adapted into our confidence engine).
+- SHA-256 chained audit logs.
+- Structured citation formatting.
+- Measured-vs-limit charts for easy reading.
+
+Our strategic focus remains on real AI depth, robust testing, offline viability, the physics-based benchmark, and high-performance UI (React + warm FastAPI). Integrate any genuinely superior patterns discovered near the deadline.
 
 ---
 

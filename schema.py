@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Literal, Dict, Any
-from datetime import datetime
+from typing import List, Optional, Literal, Dict, Any, get_args
+from datetime import datetime, timezone
 import uuid
 
 @dataclass
@@ -49,6 +49,9 @@ class Hazard:
             raise ValueError("confidence must be between 0.0 and 1.0")
         if len(self.bbox) != 4:
             raise ValueError("bbox must have 4 ints")
+        valid_types = get_args(self.__annotations__['type'])
+        if self.type not in valid_types:
+            raise ValueError(f"Hazard type must be one of {valid_types}, got {self.type}")
 
 @dataclass
 class VisionInput:
@@ -83,7 +86,7 @@ class VisionResult:
     hazards: List[Hazard]
     summary: str
     source: Literal['gemini', 'fallback']
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     error: Optional[str] = None
 
 @dataclass
@@ -92,7 +95,7 @@ class SafetyAlert:
     triggered_rules: List[str]
     recommended_action: str
     zone: str
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     error: Optional[str] = None
     def __post_init__(self):
         self.risk_score = max(0, min(100, self.risk_score))
@@ -105,12 +108,17 @@ class ComplianceViolation:
     message: str
     oisd_reference: str
 
+    def __post_init__(self):
+        valid_severities = get_args(self.__annotations__['severity'])
+        if self.severity not in valid_severities:
+            raise ValueError(f"Severity must be one of {valid_severities}, got {self.severity}")
+
 @dataclass
 class ComplianceResult:
     pass_status: bool
     violations: List[ComplianceViolation]
     highest_severity: Optional[Literal['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']]
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     error: Optional[str] = None
 
 @dataclass
@@ -118,7 +126,7 @@ class KnowledgeResult:
     answer: str
     sources: List[Dict[str, str]]  # [{filename,page,excerpt}]
     confidence: float
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     error: Optional[str] = None
 
 @dataclass
@@ -129,5 +137,5 @@ class OrchestratorResult:
     safety: Optional[SafetyAlert] = None
     compliance: Optional[ComplianceResult] = None
     knowledge: Optional[KnowledgeResult] = None
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     error: Optional[str] = None
