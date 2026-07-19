@@ -32,7 +32,6 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
-import paho.mqtt.publish as mqtt_publish  # noqa: E402
 
 # Light imports only (no torch/chromadb here).
 from schema import (SensorReading, SensorInput, ComplianceInput, QueryInput,  # noqa: E402
@@ -40,6 +39,7 @@ from schema import (SensorReading, SensorInput, ComplianceInput, QueryInput,  # 
 from agents.safety_agent import SafetyAgent  # noqa: E402
 from agents.compliance_agent import ComplianceAgent  # noqa: E402
 from agents.output_agent import OutputAgent  # noqa: E402
+from agents.action_agent import ActionAgent  # noqa: E402
 from utils.interventions import rank_interventions as _rule_interventions  # noqa: E402,F401
 from utils.risk_model import graduated_risk, rank_interventions  # noqa: E402
 from utils.confidence import assess_confidence  # noqa: E402
@@ -59,13 +59,26 @@ app.add_middleware(
 _safety = SafetyAgent()
 _compliance = ComplianceAgent()
 _output = OutputAgent()
+_action = ActionAgent()
 _knowledge = None  # lazy
 _vision = None  # lazy
 
-from collections import defaultdict, deque
+import sqlite3
 
-# Stateful edge cache for forecasting
-_ZONE_HISTORY = defaultdict(lambda: {"gas": deque(maxlen=10), "oxygen": deque(maxlen=10)})
+_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "telemetry.db")
+def _init_db():
+    with sqlite3.connect(_DB_PATH) as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS zone_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                zone TEXT NOT NULL,
+                gas_ppm REAL NOT NULL,
+                oxygen_pct REAL NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+_init_db()
 
 def _get_knowledge():
     global _knowledge
@@ -164,11 +177,23 @@ def scan(req: ScanRequest):
     if reading.temp_c >= sp["temp_c"]:
         single.append("temperature")
 
-    # Update history and generate forecast
-    hist = _ZONE_HISTORY[reading.zone]
-    hist["gas"].append(reading.gas_ppm)
-    hist["oxygen"].append(reading.oxygen_pct)
-    forecast = forecast_summary(list(hist["gas"]), list(hist["oxygen"]))
+    # Update history and generate forecast via SQLite
+    with sqlite3.connect(_DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        conn.execute(
+            "INSERT INTO zone_history (zone, gas_ppm, oxygen_pct) VALUES (?, ?, ?)",
+            (reading.zone, reading.gas_ppm, reading.oxygen_pct)
+        )
+        conn.commit()
+        cursor = conn.execute(
+            "SELECT gas_ppm, oxygen_pct FROM zone_history WHERE zone = ? ORDER BY id DESC LIMIT 10",
+            (reading.zone,)
+        )
+        rows = cursor.fetchall()
+        
+    hist_gas = [row["gas_ppm"] for row in reversed(rows)]
+    hist_oxygen = [row["oxygen_pct"] for row in reversed(rows)]
+    forecast = forecast_summary(hist_gas, hist_oxygen)
 
     result = {
         "risk_score": grad["score"],
@@ -193,19 +218,9 @@ def scan(req: ScanRequest):
         "forecast": forecast
     }
 
-    # Close the Loop: Autonomously publish MQTT shutdown if risk is CRITICAL
-    if grad["score"] >= 80 or (forecast and forecast.get("minutes_to_gas_idlh") is not None and forecast.get("minutes_to_gas_idlh") <= 5.0):
-        try:
-            mqtt_publish.single(
-                "vhackathon/actuator/shutdown", 
-                payload=f'{{"zone": "{reading.zone}", "reason": "CRITICAL_RISK", "score": {grad["score"]}}}',
-                hostname="test.mosquitto.org"
-            )
-            result["actuation"] = "SHUTDOWN_COMMAND_ISSUED"
-        except Exception as e:
-            result["actuation"] = f"SHUTDOWN_FAILED: {e}"
-    else:
-        result["actuation"] = "NONE"
+    # Close the Loop: Autonomously publish MQTT shutdown if risk is CRITICAL via ActionAgent
+    forecast_min = forecast.get("minutes_to_gas_idlh") if forecast else None
+    result["actuation"] = _action.decide_and_act(reading.zone, grad["score"], forecast_min)
 
     event_data = {
         "type": "api_scan", 

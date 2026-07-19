@@ -9,3 +9,4 @@ knowledge_base/processed/
 *.log
 *.pdf
 .pytest_cache/
+models/vit_local/

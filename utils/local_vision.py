@@ -11,13 +11,16 @@ import numpy as np
 
 import torch
 import torch.nn as nn
+from transformers import ViTImageProcessor, ViTForImageClassification
 
 from schema import VisionResult, Hazard
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _MODEL_PATH = os.path.join(_ROOT, "models", "hazard_model.pt")
+_VIT_PATH = os.path.join(_ROOT, "models", "vit_local")
 
 _mlp_cache = None
+_vit_cache = None
 
 # HSV feature: 3 channels x 8 bins = 24-d normalized histogram.
 _BINS = 8
@@ -95,15 +98,17 @@ def features(rgb: np.ndarray) -> np.ndarray:
 
 
 def _load_model():
-    global _mlp_cache
-    if _mlp_cache is not None:
-        return _mlp_cache
+    global _mlp_cache, _vit_cache
+    if _mlp_cache is not None and _vit_cache is not None:
+        return _mlp_cache, _vit_cache
+        
     try:
+        # Load MLP
         if os.path.isfile(_MODEL_PATH):
             d = torch.load(_MODEL_PATH, weights_only=True)
             mu = d["mu"]
             sigma = d["sigma"]
-            model = nn.Sequential(
+            mlp = nn.Sequential(
                 nn.Linear(len(mu), 32),
                 nn.ReLU(),
                 nn.Linear(32, 16),
@@ -111,29 +116,57 @@ def _load_model():
                 nn.Linear(16, 1),
                 nn.Sigmoid()
             )
-            model.load_state_dict(d['model_state'])
-            model.eval()
-            _mlp_cache = (model, mu, sigma)
-            return _mlp_cache
-    except Exception:
-        return None
-    return None
+            mlp.load_state_dict(d['model_state'])
+            mlp.eval()
+            _mlp_cache = (mlp, mu, sigma)
+            
+        # Load ViT
+        if os.path.isdir(_VIT_PATH):
+            processor = ViTImageProcessor.from_pretrained(_VIT_PATH, local_files_only=True)
+            vit = ViTForImageClassification.from_pretrained(_VIT_PATH, local_files_only=True)
+            vit.eval()
+            _vit_cache = (processor, vit)
+            
+    except Exception as e:
+        print(f"Model load error: {e}")
+        
+    return _mlp_cache, _vit_cache
 
 
 def _model_fire_prob(rgb: np.ndarray):
-    m = _load_model()
-    if m is None:
-        return None
-    model, mu, sigma = m
-    x = features(rgb)
-    if x.shape[0] != len(mu):
-        return None
-    sigma = np.where(sigma < 1e-6, 1.0, sigma)
-    x = (x - mu) / sigma
-    with torch.no_grad():
-        t = torch.tensor(x, dtype=torch.float32).unsqueeze(0)
-        prob = model(t).item()
-    return prob
+    mlp_res, vit_res = _load_model()
+    prob_mlp = 0.0
+    vit_labels = []
+    
+    if mlp_res is not None:
+        model, mu, sigma = mlp_res
+        x = features(rgb)
+        if x.shape[0] == len(mu):
+            sigma = np.where(sigma < 1e-6, 1.0, sigma)
+            x = (x - mu) / sigma
+            with torch.no_grad():
+                t = torch.tensor(x, dtype=torch.float32).unsqueeze(0)
+                prob_mlp = model(t).item()
+                
+    if vit_res is not None:
+        processor, vit = vit_res
+        inputs = processor(images=rgb, return_tensors="pt")
+        with torch.no_grad():
+            outputs = vit(**inputs)
+        logits = outputs.logits
+        probs = torch.nn.functional.softmax(logits, dim=-1)
+        top5_prob, top5_catid = torch.topk(probs, 5)
+        for i in range(top5_prob.size(1)):
+            label = vit.config.id2label[top5_catid[0][i].item()]
+            vit_labels.append(label)
+            
+    # Combine signals
+    final_prob = prob_mlp
+    danger_keywords = ["fire", "flame", "smoke", "match", "volcano", "stove"]
+    if any(any(kw in lbl.lower() for kw in danger_keywords) for lbl in vit_labels):
+        final_prob = max(final_prob, 0.85)
+        
+    return final_prob, vit_labels
 
 
 def _bbox_pct(mask: np.ndarray, w: int, h: int):
@@ -179,9 +212,12 @@ def detect(image_path: str) -> VisionResult:
                 cell = fire_mask[i * gh:(i + 1) * gh, j * gw:(j + 1) * gw]
                 if cell.size:
                     local = max(local, float(cell.mean()))
-        model_p = _model_fire_prob(rgb)
+        model_res = _model_fire_prob(rgb)
+        model_p, vit_labels = model_res if model_res is not None else (None, [])
         if model_p is not None:
-            notes.append(f"model p(fire)={model_p:.2f}")
+            notes.append(f"MLP p(fire)={model_p:.2f}")
+        if vit_labels:
+            notes.append(f"ViT Top: {', '.join(vit_labels[:2])}")
         # warm-core presence separates a real flame from pure-red text/logos/signs
         core_mask = ((H >= 10) & (H <= 30) & (S > 80) & (V > 180))
         core_frac = float(core_mask.sum()) / total
