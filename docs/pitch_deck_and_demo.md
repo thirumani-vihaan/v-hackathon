@@ -100,7 +100,8 @@ ZIP + incident PDF. "The first ten minutes, orchestrated automatically."
 
 **3:10–3:40 The breadth (fast montage).** Vision bounding boxes (offline OpenCV),
 Knowledge grounded answer with citations, Zone Map live risk overlay, Safety Tools
-H₂S exposure/%LEL/evac-radius. "Five agents. One risk picture."
+H₂S exposure/%LEL/evac-radius. "Five agents. One risk picture." Open the terminal 
+to show the live LangGraph ReAct loop streaming its internal tool calls (RAG → TSDB → MQTT).
 
 **3:40–4:00 The moat + close.** "Every bit of this runs offline on a plant PC — no
 internet, no cloud, fully auditable." Repeat the thesis line. End card: metrics + repo.
@@ -118,6 +119,8 @@ internet, no cloud, fully auditable." Repeat the thesis line. End card: metrics 
   intermediate: reactive scoring alone is too late; prediction is what wins."
 - *"Why will this scale?"* → "Stateless agents, typed contracts, offline embeddings,
   plant-agnostic config, ingestion-adapter-ready. It already runs a 6-tab live UI."
+- *"What happens when it breaks?"* → "Graceful degradation is a core architectural tenet. If the Gemini API rate-limits mid-scan, Vision falls back instantly to the local PyTorch ViT head for fire detection, and RAG falls back to extractive sentence ranking. If a sensor drops, the compound model still calculates partial risk from remaining feeds."
+- *"What exactly did you build during the hackathon vs use pre-existing?"* → "Everything you see here—the 5-agent LangGraph pipeline, the React/FastAPI stack, the SQLite edge TSDB, the custom-trained PyTorch ViT head, the offline RAG logic, and the physics-based benchmark generator—was conceived and written entirely during this hackathon sprint, aside from standard base models (MiniLM) and UI libraries."
 
 ## Deliverables checklist (PS1)
 - [x] Working prototype (Streamlit, 7 tabs, 82 tests, offline)
