@@ -18,9 +18,11 @@ from schema import VisionResult, Hazard
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _MODEL_PATH = os.path.join(_ROOT, "models", "hazard_model.pt")
 _VIT_PATH = os.path.join(_ROOT, "models", "vit_local")
+_VIT_HEAD_PATH = os.path.join(_ROOT, "models", "vit_head.pt")
 
 _mlp_cache = None
 _vit_cache = None
+_vit_head_cache = None
 
 # HSV feature: 3 channels x 8 bins = 24-d normalized histogram.
 _BINS = 8
@@ -98,9 +100,9 @@ def features(rgb: np.ndarray) -> np.ndarray:
 
 
 def _load_model():
-    global _mlp_cache, _vit_cache
-    if _mlp_cache is not None and _vit_cache is not None:
-        return _mlp_cache, _vit_cache
+    global _mlp_cache, _vit_cache, _vit_head_cache
+    if _mlp_cache is not None and _vit_cache is not None and _vit_head_cache is not None:
+        return _mlp_cache, _vit_cache, _vit_head_cache
         
     try:
         # Load MLP
@@ -120,23 +122,37 @@ def _load_model():
             mlp.eval()
             _mlp_cache = (mlp, mu, sigma)
             
-        # Load ViT
+        # Load ViT and Head
         if os.path.isdir(_VIT_PATH):
+            from transformers import ViTModel
             processor = ViTImageProcessor.from_pretrained(_VIT_PATH, local_files_only=True)
-            vit = ViTForImageClassification.from_pretrained(_VIT_PATH, local_files_only=True)
+            vit = ViTModel.from_pretrained(_VIT_PATH, local_files_only=True)
             vit.eval()
             _vit_cache = (processor, vit)
+            
+            if os.path.isfile(_VIT_HEAD_PATH):
+                class ViTHead(nn.Module):
+                    def __init__(self):
+                        super().__init__()
+                        self.linear = nn.Linear(768, 1)
+                        self.sigmoid = nn.Sigmoid()
+                    def forward(self, x):
+                        return self.sigmoid(self.linear(x))
+                head = ViTHead()
+                head.load_state_dict(torch.load(_VIT_HEAD_PATH, weights_only=True))
+                head.eval()
+                _vit_head_cache = head
             
     except Exception as e:
         print(f"Model load error: {e}")
         
-    return _mlp_cache, _vit_cache
+    return _mlp_cache, _vit_cache, _vit_head_cache
 
 
 def _model_fire_prob(rgb: np.ndarray):
-    mlp_res, vit_res = _load_model()
+    mlp_res, vit_res, head_res = _load_model()
     prob_mlp = 0.0
-    vit_labels = []
+    prob_vit = 0.0
     
     if mlp_res is not None:
         model, mu, sigma = mlp_res
@@ -148,25 +164,16 @@ def _model_fire_prob(rgb: np.ndarray):
                 t = torch.tensor(x, dtype=torch.float32).unsqueeze(0)
                 prob_mlp = model(t).item()
                 
-    if vit_res is not None:
+    if vit_res is not None and head_res is not None:
         processor, vit = vit_res
         inputs = processor(images=rgb, return_tensors="pt")
         with torch.no_grad():
-            outputs = vit(**inputs)
-        logits = outputs.logits
-        probs = torch.nn.functional.softmax(logits, dim=-1)
-        top5_prob, top5_catid = torch.topk(probs, 5)
-        for i in range(top5_prob.size(1)):
-            label = vit.config.id2label[top5_catid[0][i].item()]
-            vit_labels.append(label)
+            emb = vit(**inputs).pooler_output
+            prob_vit = head_res(emb).item()
             
-    # Combine signals
-    final_prob = prob_mlp
-    danger_keywords = ["fire", "flame", "smoke", "match", "volcano", "stove"]
-    if any(any(kw in lbl.lower() for kw in danger_keywords) for lbl in vit_labels):
-        final_prob = max(final_prob, 0.85)
-        
-    return final_prob, vit_labels
+    # Combine signals: Max pooling over the two independent models
+    final_prob = max(prob_mlp, prob_vit)
+    return final_prob, prob_vit
 
 
 def _bbox_pct(mask: np.ndarray, w: int, h: int):
@@ -213,11 +220,11 @@ def detect(image_path: str) -> VisionResult:
                 if cell.size:
                     local = max(local, float(cell.mean()))
         model_res = _model_fire_prob(rgb)
-        model_p, vit_labels = model_res if model_res is not None else (None, [])
+        model_p, vit_p = model_res if model_res is not None else (None, 0.0)
         if model_p is not None:
-            notes.append(f"MLP p(fire)={model_p:.2f}")
-        if vit_labels:
-            notes.append(f"ViT Top: {', '.join(vit_labels[:2])}")
+            notes.append(f"MLP p={model_p:.2f}")
+        if vit_p > 0.0:
+            notes.append(f"ViT p={vit_p:.2f}")
         # warm-core presence separates a real flame from pure-red text/logos/signs
         core_mask = ((H >= 10) & (H <= 30) & (S > 80) & (V > 180))
         core_frac = float(core_mask.sum()) / total

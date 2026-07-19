@@ -18,12 +18,38 @@ def issue_mqtt_command(zone: str, reason: str, score: float) -> str:
     except Exception as e:
         return f"SHUTDOWN_FAILED: {e}"
 
+@tool
+def query_safety_manual(query: str) -> str:
+    """Queries the industrial safety manual (OISD) for guidelines and thresholds."""
+    from agents.knowledge_agent import KnowledgeAgent
+    from schema import QueryInput
+    agent = KnowledgeAgent()
+    res = agent.query(QueryInput(query_text=query, request_id="action-agent"))
+    return res.answer
+
+@tool
+def get_recent_telemetry(zone: str) -> str:
+    """Fetches the recent gas and oxygen readings for a zone from the time-series database."""
+    import sqlite3
+    _DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "telemetry.db")
+    try:
+        with sqlite3.connect(_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT gas_ppm, oxygen_pct FROM zone_history WHERE zone = ? ORDER BY id DESC LIMIT 5",
+                (zone,)
+            )
+            rows = cursor.fetchall()
+            return str([dict(r) for r in rows])
+    except Exception as e:
+        return f"Database error: {e}"
+
 class ActionAgent:
     """True Agentic Reasoning node: evaluates physics output and autonomously decides to act."""
     
     def __init__(self):
         self.api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        self.tools = [issue_mqtt_command]
+        self.tools = [issue_mqtt_command, query_safety_manual, get_recent_telemetry]
         if self.api_key:
             self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=self.api_key, temperature=0.0)
             template = '''Answer the following questions as best you can. You have access to the following tools:
@@ -59,10 +85,12 @@ Thought:{agent_scratchpad}'''
             return "NONE"
 
         query = (
-            f"The current zone is {zone}. The compound risk score is {risk_score} out of 100. "
-            f"The forecasted time until a critical IDLH (lethal) gas limit is reached is {forecast_minutes} minutes. "
-            f"If the risk score is >= 80 OR the forecast is <= 5.0 minutes, you MUST use the issue_mqtt_command tool to shut down the plant. "
-            f"Otherwise, do not issue the command. What did you decide?"
+            f"The current zone is {zone}. The system reported a risk score of {risk_score} "
+            f"and a forecast of {forecast_minutes} minutes until critical gas IDLH. "
+            f"You MUST use the `query_safety_manual` tool to verify the official guidelines for critical gas exposure and shutdown thresholds. "
+            f"Then, use the `get_recent_telemetry` tool to confirm the trend in the database. "
+            f"If the manual confirms this is a critical situation and the telemetry is high, you MUST invoke `issue_mqtt_command` to shut down the plant. "
+            f"Otherwise, do not issue the command. Reason through these steps clearly."
         )
         
         try:
