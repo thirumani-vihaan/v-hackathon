@@ -3,6 +3,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { api } from "./api";
 import { speak, stopSpeaking, voiceInfo, hasVoice } from "./voice";
+import ReactFlow, { Background, Controls } from "reactflow";
+import "reactflow/dist/style.css";
+import dagre from "dagre";
 
 const readingOf = (r) => ({ gas_ppm: r.gas_ppm, temp_c: r.temp_c, oxygen_pct: r.oxygen_pct, humidity_pct: r.humidity_pct, worker_count: r.worker_count, zone: r.zone, permit_type: r.permit_type });
 const HEX = { red: "#e74c3c", orange: "#e67e22", green: "#2ecc71" };
@@ -43,28 +46,87 @@ function MapView({ colors, coords, facilities }) {
   );
 }
 
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+const getLayoutedElements = (nodes, edges, direction = "LR") => {
+  const isHorizontal = direction === "LR";
+  dagreGraph.setGraph({ rankdir: direction });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: 150, height: 50 });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  nodes.forEach((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    node.targetPosition = isHorizontal ? "left" : "top";
+    node.sourcePosition = isHorizontal ? "right" : "bottom";
+    node.position = {
+      x: nodeWithPosition.x - 75,
+      y: nodeWithPosition.y - 25,
+    };
+  });
+  return { nodes, edges };
+};
+
 function GraphViz({ graph }) {
-  const nodes = graph.nodes, edges = graph.edges;
-  const W = 420, H = 360, cx = W / 2, cy = H / 2, R = 106;
-  const pos = {};
-  nodes.forEach((n, i) => { const a = (i / nodes.length) * 2 * Math.PI - Math.PI / 2; pos[n.id] = [cx + R * Math.cos(a), cy + R * Math.sin(a), a]; });
+  const rawNodes = graph.nodes || [];
+  const rawEdges = graph.edges || [];
+
   const color = (k) => (k === "zone" ? "#f1c40f" : k === "permit" ? "#22d3ee" : "#8b98ad");
   const label = (n) => {
     if (n.kind === "zone") return n.id.replace("Zone-", "");
     if (n.kind === "permit") return (n.id.split(":")[1] || "").split("@")[0].replace(/_/g, " ");
     return n.id.length > 16 ? n.id.slice(0, 15) + "…" : n.id;
   };
+
+  const initialNodes = rawNodes.map((n) => ({
+    id: n.id,
+    data: { label: label(n) },
+    style: { 
+      background: "#1e293b", 
+      color: "#e2e8f0", 
+      border: `2px solid ${color(n.kind)}`,
+      borderRadius: "8px",
+      fontSize: "12px",
+      padding: "10px",
+      fontWeight: "500",
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+    },
+  }));
+
+  const initialEdges = rawEdges.map((e, i) => ({
+    id: `e-${e.source}-${e.target}-${i}`,
+    source: e.source,
+    target: e.target,
+    animated: true,
+    style: { stroke: "rgba(150,170,200,0.5)", strokeWidth: 2 }
+  }));
+
+  const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+    initialNodes,
+    initialEdges
+  );
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%" }}>
-      {edges.map((e, i) => { const a = pos[e.source], b = pos[e.target]; if (!a || !b) return null;
-        return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(150,170,200,0.16)" strokeWidth="1" />; })}
-      {nodes.map((n) => { const [x, y, ang] = pos[n.id]; const c = color(n.kind); const right = Math.cos(ang) >= 0;
-        return <g key={n.id}>
-          <circle cx={x} cy={y} r={n.kind === "zone" ? 8 : 5} fill={c} stroke={c} />
-          <text x={x + (right ? 9 : -9)} y={y + 3} fontSize="9" fill="#c7d0dd" textAnchor={right ? "start" : "end"}>{label(n)}</text>
-          <title>{n.id} ({n.kind})</title>
-        </g>; })}
-    </svg>
+    <div style={{ width: "100%", height: "400px", background: "#0f172a", borderRadius: "8px", overflow: "hidden", border: "1px solid #334155" }}>
+      <ReactFlow 
+        nodes={layoutedNodes} 
+        edges={layoutedEdges} 
+        fitView 
+        fitViewOptions={{ padding: 0.2 }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background color="#334155" gap={16} />
+        <Controls style={{ background: "#1e293b", fill: "#e2e8f0", border: "none" }} />
+      </ReactFlow>
+    </div>
   );
 }
 
