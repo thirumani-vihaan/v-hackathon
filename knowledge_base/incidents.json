@@ -1,20 +1,1460 @@
 [
-  { "id": "INC-2021-007", "date": "2021-03-11", "zone": "Zone-C-Confined", "permits": ["confined_space", "hot_work"], "gas_ppm": 74, "oxygen_pct": 18.7, "severity": "CRITICAL", "root_cause": "gas_accumulation_during_hot_work", "description": "Welding inside a reaction vessel while H2S accumulated below the single-alarm setpoint.", "outcome": "Flash fire; two workers injured." },
-  { "id": "INC-2021-019", "date": "2021-08-02", "zone": "Zone-C-Confined", "permits": ["confined_space", "maintenance"], "gas_ppm": 63, "oxygen_pct": 18.2, "severity": "CRITICAL", "root_cause": "oxygen_displacement_confined_entry", "description": "Sludge removal disturbed trapped gas; oxygen displaced during entry at shift start.", "outcome": "One fatality from asphyxiation." },
-  { "id": "INC-2022-004", "date": "2022-01-27", "zone": "Zone-B-Process", "permits": ["hot_work"], "gas_ppm": 88, "oxygen_pct": 20.1, "severity": "HIGH", "root_cause": "gas_accumulation_during_hot_work", "description": "Hot work near coke-oven battery with rising gas; permit not revalidated after gas trend.", "outcome": "Near miss; work stopped by roving supervisor." },
-  { "id": "INC-2022-011", "date": "2022-05-14", "zone": "Zone-C-Confined", "permits": ["confined_space"], "gas_ppm": 22, "oxygen_pct": 15.9, "severity": "CRITICAL", "root_cause": "oxygen_displacement_confined_entry", "description": "Inert-gas purge left residual low-oxygen atmosphere before entry.", "outcome": "Rescue required; SCBA used." },
-  { "id": "INC-2022-023", "date": "2022-09-30", "zone": "Zone-A-Tank-Farm", "permits": ["hot_work"], "gas_ppm": 61, "oxygen_pct": 20.6, "severity": "HIGH", "root_cause": "gas_accumulation_during_hot_work", "description": "Tank-top hot work with vapour breathing losses at high ambient temperature.", "outcome": "Near miss; fire watch extinguished ignition." },
-  { "id": "INC-2022-031", "date": "2022-11-19", "zone": "Zone-C-Confined", "permits": ["confined_space", "maintenance", "shift_changeover"], "gas_ppm": 69, "oxygen_pct": 18.5, "severity": "CRITICAL", "root_cause": "handover_supervision_gap", "description": "Maintenance continued across the 06:00 handover; incoming crew unaware of rising gas.", "outcome": "Two workers overcome; both recovered." },
-  { "id": "INC-2023-002", "date": "2023-01-08", "zone": "Zone-B-Process", "permits": ["hot_work", "maintenance"], "gas_ppm": 95, "oxygen_pct": 19.7, "severity": "CRITICAL", "root_cause": "gas_accumulation_during_hot_work", "description": "Coke-oven maintenance with hot work as entrapped gases built up.", "outcome": "Explosion; multiple injuries (Vizag-type pattern)." },
-  { "id": "INC-2023-014", "date": "2023-04-22", "zone": "Zone-D-Substation", "permits": ["electrical"], "gas_ppm": 8, "oxygen_pct": 20.9, "severity": "MEDIUM", "root_cause": "electrical_in_high_humidity", "description": "Switchgear work during monsoon humidity without ELCB verification.", "outcome": "Minor shock; near miss." },
-  { "id": "INC-2023-020", "date": "2023-06-17", "zone": "Zone-C-Confined", "permits": ["confined_space", "maintenance"], "gas_ppm": 66, "oxygen_pct": 18.4, "severity": "CRITICAL", "root_cause": "oxygen_displacement_confined_entry", "description": "Pit maintenance with monsoon water ingress displacing oxygen.", "outcome": "One worker rescued; near fatality." },
-  { "id": "INC-2023-028", "date": "2023-08-09", "zone": "Zone-B-Process", "permits": ["hot_work"], "gas_ppm": 57, "oxygen_pct": 20.4, "severity": "HIGH", "root_cause": "gas_accumulation_during_hot_work", "description": "Gas crept above 50 ppm during hot work; single high-alarm never tripped.", "outcome": "Near miss; caught on manual round." },
-  { "id": "INC-2023-035", "date": "2023-10-25", "zone": "Zone-C-Confined", "permits": ["confined_space", "shift_changeover"], "gas_ppm": 64, "oxygen_pct": 18.8, "severity": "CRITICAL", "root_cause": "handover_supervision_gap", "description": "Entry authorised just before the 22:00 handover; standby watch lapsed.", "outcome": "Worker overcome; buddy raised alarm." },
-  { "id": "INC-2024-006", "date": "2024-02-13", "zone": "Zone-A-Tank-Farm", "permits": ["cold_work"], "gas_ppm": 41, "oxygen_pct": 20.7, "severity": "MEDIUM", "root_cause": "gas_accumulation_general", "description": "Cold work with detectable gas above 30 ppm; ventilation inadequate.", "outcome": "Near miss; increased monitoring." },
-  { "id": "INC-2024-013", "date": "2024-05-01", "zone": "Zone-C-Confined", "permits": ["confined_space", "hot_work", "maintenance"], "gas_ppm": 82, "oxygen_pct": 18.1, "severity": "CRITICAL", "root_cause": "gas_accumulation_during_hot_work", "description": "Simultaneous maintenance and hot work in a confined vessel with rising gas.", "outcome": "Flash fire; evacuation triggered." },
-  { "id": "INC-2024-021", "date": "2024-07-19", "zone": "Zone-C-Confined", "permits": ["confined_space", "maintenance", "shift_changeover"], "gas_ppm": 71, "oxygen_pct": 18.3, "severity": "CRITICAL", "root_cause": "handover_supervision_gap", "description": "Monsoon maintenance across handover; gas trend not communicated to next shift.", "outcome": "Two workers overcome; both recovered." },
-  { "id": "INC-2024-030", "date": "2024-09-28", "zone": "Zone-B-Process", "permits": ["hot_work", "maintenance"], "gas_ppm": 90, "oxygen_pct": 19.9, "severity": "CRITICAL", "root_cause": "gas_accumulation_during_hot_work", "description": "Reactor maintenance with hot work; entrapped gas released suddenly.", "outcome": "Explosion; severe injuries." },
-  { "id": "INC-2024-037", "date": "2024-12-05", "zone": "Zone-D-Substation", "permits": ["electrical"], "gas_ppm": 6, "oxygen_pct": 20.9, "severity": "LOW", "root_cause": "electrical_in_high_humidity", "description": "Winter fog condensation on switchgear; earth fault.", "outcome": "Near miss; no injury." },
-  { "id": "INC-2025-001", "date": "2025-01-13", "zone": "Zone-B-Process", "permits": ["hot_work", "maintenance"], "gas_ppm": 118, "oxygen_pct": 18.4, "severity": "CRITICAL", "root_cause": "gas_accumulation_during_hot_work", "description": "Coke-oven battery maintenance; entrapped gases triggered a sudden explosion (Visakhapatnam Steel-type event).", "outcome": "Multiple fatalities." },
-  { "id": "INC-2025-009", "date": "2025-03-02", "zone": "Zone-C-Confined", "permits": ["confined_space", "maintenance"], "gas_ppm": 60, "oxygen_pct": 18.6, "severity": "HIGH", "root_cause": "oxygen_displacement_confined_entry", "description": "Vessel maintenance; oxygen dipped below 19.5% while gas accumulated below the single high-alarm.", "outcome": "Near miss; compound alert would have fired 15 min earlier." }
+  {
+    "id": "INC-2019-9013",
+    "date": "2019-01-02",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "confined_space"
+    ],
+    "gas_ppm": 16,
+    "oxygen_pct": 18.4,
+    "severity": "HIGH",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-D-Substation involving confined_space. Root cause: ventilation_failure.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2019-9069",
+    "date": "2019-02-09",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "electrical"
+    ],
+    "gas_ppm": 108,
+    "oxygen_pct": 20.7,
+    "severity": "CRITICAL",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-C-Confined involving electrical. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Minor injury; first aid given."
+  },
+  {
+    "id": "INC-2019-9074",
+    "date": "2019-02-13",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work",
+      "shift_changeover"
+    ],
+    "gas_ppm": 88,
+    "oxygen_pct": 18.2,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simulated incident in Zone-B-Process involving hot_work, shift_changeover. Root cause: gas_accumulation_during_hot_work.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2019-9052",
+    "date": "2019-02-17",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 58,
+    "oxygen_pct": 17.9,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simulated incident in Zone-B-Process involving hot_work. Root cause: gas_accumulation_during_hot_work.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2019-9015",
+    "date": "2019-03-13",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 103,
+    "oxygen_pct": 16.6,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving hot_work. Root cause: gas_accumulation_during_hot_work.",
+    "outcome": "Minor injury; first aid given."
+  },
+  {
+    "id": "INC-2019-9066",
+    "date": "2019-04-28",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 84,
+    "oxygen_pct": 20.6,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-B-Process involving confined_space, maintenance. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2019-9006",
+    "date": "2019-06-14",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 60,
+    "oxygen_pct": 18.7,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-C-Confined involving hot_work, maintenance. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2019-9057",
+    "date": "2019-07-17",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 48,
+    "oxygen_pct": 16.3,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving confined_space, hot_work. Root cause: ventilation_failure.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2019-9017",
+    "date": "2019-08-07",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "confined_space",
+      "shift_changeover"
+    ],
+    "gas_ppm": 51,
+    "oxygen_pct": 19.7,
+    "severity": "HIGH",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-D-Substation involving confined_space, shift_changeover. Root cause: handover_supervision_gap.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2019-9046",
+    "date": "2019-08-21",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "confined_space",
+      "shift_changeover"
+    ],
+    "gas_ppm": 82,
+    "oxygen_pct": 19.7,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving confined_space, shift_changeover. Root cause: electrical_in_high_humidity.",
+    "outcome": "Minor injury; first aid given."
+  },
+  {
+    "id": "INC-2019-9011",
+    "date": "2019-10-13",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "maintenance"
+    ],
+    "gas_ppm": 12,
+    "oxygen_pct": 16.8,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-D-Substation involving maintenance. Root cause: ventilation_failure.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2019-9059",
+    "date": "2019-10-13",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work",
+      "shift_changeover"
+    ],
+    "gas_ppm": 83,
+    "oxygen_pct": 16.4,
+    "severity": "CRITICAL",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-B-Process involving hot_work, shift_changeover. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2019-9079",
+    "date": "2019-10-21",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "confined_space"
+    ],
+    "gas_ppm": 76,
+    "oxygen_pct": 17.5,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-B-Process involving confined_space. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2019-9047",
+    "date": "2019-11-12",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 49,
+    "oxygen_pct": 18.4,
+    "severity": "HIGH",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving cold_work. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2019-9019",
+    "date": "2019-11-13",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 43,
+    "oxygen_pct": 16.1,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simulated incident in Zone-D-Substation involving cold_work. Root cause: gas_accumulation_during_hot_work.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2019-9002",
+    "date": "2019-11-27",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "hot_work",
+      "shift_changeover"
+    ],
+    "gas_ppm": 50,
+    "oxygen_pct": 20.2,
+    "severity": "MEDIUM",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-C-Confined involving hot_work, shift_changeover. Root cause: ventilation_failure.",
+    "outcome": "Near miss; caught on manual round."
+  },
+  {
+    "id": "INC-2020-9038",
+    "date": "2020-01-07",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 42,
+    "oxygen_pct": 19.0,
+    "severity": "HIGH",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space, maintenance. Root cause: electrical_in_high_humidity.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2020-9036",
+    "date": "2020-02-09",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 60,
+    "oxygen_pct": 18.3,
+    "severity": "HIGH",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-D-Substation involving confined_space, maintenance. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2020-9023",
+    "date": "2020-02-17",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 50,
+    "oxygen_pct": 19.7,
+    "severity": "MEDIUM",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-D-Substation involving hot_work, maintenance. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2020-9027",
+    "date": "2020-03-09",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 91,
+    "oxygen_pct": 19.7,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-C-Confined involving cold_work. Root cause: electrical_in_high_humidity.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2020-9024",
+    "date": "2020-06-05",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 34,
+    "oxygen_pct": 18.9,
+    "severity": "HIGH",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-D-Substation involving confined_space, hot_work. Root cause: electrical_in_high_humidity.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2020-9030",
+    "date": "2020-06-06",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 55,
+    "oxygen_pct": 20.3,
+    "severity": "HIGH",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-B-Process involving cold_work. Root cause: ventilation_failure.",
+    "outcome": "Near miss; caught on manual round."
+  },
+  {
+    "id": "INC-2020-9068",
+    "date": "2020-06-28",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "electrical",
+      "maintenance"
+    ],
+    "gas_ppm": 93,
+    "oxygen_pct": 17.8,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-B-Process involving electrical, maintenance. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2020-9062",
+    "date": "2020-07-05",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "maintenance"
+    ],
+    "gas_ppm": 54,
+    "oxygen_pct": 20.7,
+    "severity": "HIGH",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving maintenance. Root cause: ventilation_failure.",
+    "outcome": "Near miss; caught on manual round."
+  },
+  {
+    "id": "INC-2020-9034",
+    "date": "2020-08-17",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "hot_work",
+      "shift_changeover"
+    ],
+    "gas_ppm": 17,
+    "oxygen_pct": 19.6,
+    "severity": "LOW",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving hot_work, shift_changeover. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2020-9004",
+    "date": "2020-08-19",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 21,
+    "oxygen_pct": 18.1,
+    "severity": "HIGH",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simulated incident in Zone-D-Substation involving hot_work, maintenance. Root cause: gas_accumulation_during_hot_work.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2020-9067",
+    "date": "2020-08-25",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 104,
+    "oxygen_pct": 19.9,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simulated incident in Zone-B-Process involving cold_work. Root cause: gas_accumulation_during_hot_work.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2020-9005",
+    "date": "2020-09-02",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "maintenance"
+    ],
+    "gas_ppm": 55,
+    "oxygen_pct": 17.7,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-B-Process involving maintenance. Root cause: ventilation_failure.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2020-9001",
+    "date": "2020-09-08",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "electrical"
+    ],
+    "gas_ppm": 109,
+    "oxygen_pct": 18.3,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-B-Process involving electrical. Root cause: ventilation_failure.",
+    "outcome": "Minor injury; first aid given."
+  },
+  {
+    "id": "INC-2020-9007",
+    "date": "2020-09-19",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 106,
+    "oxygen_pct": 17.1,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_general",
+    "description": "Simulated incident in Zone-B-Process involving cold_work. Root cause: gas_accumulation_general.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2020-9025",
+    "date": "2020-09-22",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 80,
+    "oxygen_pct": 19.4,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-C-Confined involving hot_work. Root cause: handover_supervision_gap.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2020-9060",
+    "date": "2020-10-16",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work",
+      "shift_changeover"
+    ],
+    "gas_ppm": 66,
+    "oxygen_pct": 17.5,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-B-Process involving hot_work, shift_changeover. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2020-9035",
+    "date": "2020-10-17",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work",
+      "shift_changeover"
+    ],
+    "gas_ppm": 90,
+    "oxygen_pct": 17.0,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-B-Process involving hot_work, shift_changeover. Root cause: electrical_in_high_humidity.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2020-9081",
+    "date": "2020-11-23",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "electrical",
+      "maintenance"
+    ],
+    "gas_ppm": 74,
+    "oxygen_pct": 19.3,
+    "severity": "HIGH",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-B-Process involving electrical, maintenance. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2020-9033",
+    "date": "2020-11-29",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 93,
+    "oxygen_pct": 18.2,
+    "severity": "CRITICAL",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving confined_space, maintenance. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2020-9080",
+    "date": "2020-12-03",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 66,
+    "oxygen_pct": 17.1,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space, hot_work. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2020-9021",
+    "date": "2020-12-04",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space"
+    ],
+    "gas_ppm": 45,
+    "oxygen_pct": 17.7,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_general",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space. Root cause: gas_accumulation_general.",
+    "outcome": "Near miss; caught on manual round."
+  },
+  {
+    "id": "INC-2020-9053",
+    "date": "2020-12-28",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "confined_space",
+      "shift_changeover"
+    ],
+    "gas_ppm": 90,
+    "oxygen_pct": 20.5,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_general",
+    "description": "Simulated incident in Zone-B-Process involving confined_space, shift_changeover. Root cause: gas_accumulation_general.",
+    "outcome": "Worker overcome; rescued."
+  },
+  {
+    "id": "INC-2020-9063",
+    "date": "2020-12-31",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 97,
+    "oxygen_pct": 19.7,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-D-Substation involving confined_space, hot_work. Root cause: electrical_in_high_humidity.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2021-9014",
+    "date": "2021-01-14",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "electrical"
+    ],
+    "gas_ppm": 87,
+    "oxygen_pct": 16.6,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-B-Process involving electrical. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2021-9012",
+    "date": "2021-01-20",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 72,
+    "oxygen_pct": 17.6,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space, hot_work. Root cause: electrical_in_high_humidity.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2021-9065",
+    "date": "2021-03-05",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "maintenance"
+    ],
+    "gas_ppm": 32,
+    "oxygen_pct": 19.8,
+    "severity": "MEDIUM",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-D-Substation involving maintenance. Root cause: handover_supervision_gap.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2021-007",
+    "date": "2021-03-11",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 74,
+    "oxygen_pct": 18.7,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Welding inside a reaction vessel while H2S accumulated below the single-alarm setpoint.",
+    "outcome": "Flash fire; two workers injured."
+  },
+  {
+    "id": "INC-2021-9003",
+    "date": "2021-06-01",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "electrical"
+    ],
+    "gas_ppm": 93,
+    "oxygen_pct": 18.0,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-C-Confined involving electrical. Root cause: electrical_in_high_humidity.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2021-9018",
+    "date": "2021-07-01",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 101,
+    "oxygen_pct": 17.7,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space, hot_work. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2021-9037",
+    "date": "2021-07-11",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "confined_space"
+    ],
+    "gas_ppm": 24,
+    "oxygen_pct": 18.8,
+    "severity": "HIGH",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simulated incident in Zone-B-Process involving confined_space. Root cause: gas_accumulation_during_hot_work.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2021-019",
+    "date": "2021-08-02",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 63,
+    "oxygen_pct": 18.2,
+    "severity": "CRITICAL",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Sludge removal disturbed trapped gas; oxygen displaced during entry at shift start.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2021-9042",
+    "date": "2021-09-04",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "confined_space"
+    ],
+    "gas_ppm": 107,
+    "oxygen_pct": 18.0,
+    "severity": "CRITICAL",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-B-Process involving confined_space. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2021-9040",
+    "date": "2021-09-18",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "electrical"
+    ],
+    "gas_ppm": 59,
+    "oxygen_pct": 16.4,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-D-Substation involving electrical. Root cause: handover_supervision_gap.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2021-9041",
+    "date": "2021-10-11",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 63,
+    "oxygen_pct": 16.6,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-B-Process involving hot_work. Root cause: handover_supervision_gap.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2021-9028",
+    "date": "2021-12-05",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 39,
+    "oxygen_pct": 16.8,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-D-Substation involving hot_work, maintenance. Root cause: handover_supervision_gap.",
+    "outcome": "Minor injury; first aid given."
+  },
+  {
+    "id": "INC-2021-9058",
+    "date": "2021-12-06",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 74,
+    "oxygen_pct": 20.8,
+    "severity": "HIGH",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space, maintenance. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Worker overcome; rescued."
+  },
+  {
+    "id": "INC-2021-9031",
+    "date": "2021-12-23",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space"
+    ],
+    "gas_ppm": 65,
+    "oxygen_pct": 20.2,
+    "severity": "HIGH",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Minor injury; first aid given."
+  },
+  {
+    "id": "INC-2022-9010",
+    "date": "2022-01-01",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 98,
+    "oxygen_pct": 17.2,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-C-Confined involving cold_work. Root cause: electrical_in_high_humidity.",
+    "outcome": "Minor injury; first aid given."
+  },
+  {
+    "id": "INC-2022-9048",
+    "date": "2022-01-21",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 35,
+    "oxygen_pct": 20.9,
+    "severity": "MEDIUM",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-B-Process involving confined_space, hot_work. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2022-004",
+    "date": "2022-01-27",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 88,
+    "oxygen_pct": 20.1,
+    "severity": "HIGH",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Hot work near coke-oven battery with rising gas; permit not revalidated after gas trend.",
+    "outcome": "Near miss; work stopped by roving supervisor."
+  },
+  {
+    "id": "INC-2022-9064",
+    "date": "2022-05-07",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "maintenance"
+    ],
+    "gas_ppm": 57,
+    "oxygen_pct": 16.4,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving maintenance. Root cause: handover_supervision_gap.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2022-011",
+    "date": "2022-05-14",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space"
+    ],
+    "gas_ppm": 22,
+    "oxygen_pct": 15.9,
+    "severity": "CRITICAL",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Inert-gas purge left residual low-oxygen atmosphere before entry.",
+    "outcome": "Rescue required; SCBA used."
+  },
+  {
+    "id": "INC-2022-9020",
+    "date": "2022-05-17",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 35,
+    "oxygen_pct": 20.5,
+    "severity": "MEDIUM",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving hot_work. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Worker overcome; rescued."
+  },
+  {
+    "id": "INC-2022-9056",
+    "date": "2022-05-27",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 62,
+    "oxygen_pct": 19.6,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving hot_work. Root cause: ventilation_failure.",
+    "outcome": "Near miss; caught on manual round."
+  },
+  {
+    "id": "INC-2022-9072",
+    "date": "2022-06-25",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 44,
+    "oxygen_pct": 20.5,
+    "severity": "MEDIUM",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-D-Substation involving cold_work. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2022-9032",
+    "date": "2022-07-05",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "electrical",
+      "maintenance"
+    ],
+    "gas_ppm": 107,
+    "oxygen_pct": 19.7,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-C-Confined involving electrical, maintenance. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2022-9070",
+    "date": "2022-07-06",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "shift_changeover"
+    ],
+    "gas_ppm": 54,
+    "oxygen_pct": 16.6,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space, shift_changeover. Root cause: ventilation_failure.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2022-9045",
+    "date": "2022-07-15",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "electrical",
+      "maintenance"
+    ],
+    "gas_ppm": 79,
+    "oxygen_pct": 16.0,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-C-Confined involving electrical, maintenance. Root cause: electrical_in_high_humidity.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2022-9043",
+    "date": "2022-08-26",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "confined_space",
+      "shift_changeover"
+    ],
+    "gas_ppm": 66,
+    "oxygen_pct": 17.3,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-B-Process involving confined_space, shift_changeover. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2022-9000",
+    "date": "2022-09-12",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 56,
+    "oxygen_pct": 18.3,
+    "severity": "HIGH",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-D-Substation involving confined_space, maintenance. Root cause: electrical_in_high_humidity.",
+    "outcome": "Worker overcome; rescued."
+  },
+  {
+    "id": "INC-2022-023",
+    "date": "2022-09-30",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 61,
+    "oxygen_pct": 20.6,
+    "severity": "HIGH",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Tank-top hot work with vapour breathing losses at high ambient temperature.",
+    "outcome": "Near miss; fire watch extinguished ignition."
+  },
+  {
+    "id": "INC-2022-9077",
+    "date": "2022-11-04",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 10,
+    "oxygen_pct": 17.1,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-D-Substation involving hot_work. Root cause: ventilation_failure.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2022-031",
+    "date": "2022-11-19",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "maintenance",
+      "shift_changeover"
+    ],
+    "gas_ppm": 69,
+    "oxygen_pct": 18.5,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Maintenance continued across the 06:00 handover; incoming crew unaware of rising gas.",
+    "outcome": "Two workers overcome; both recovered."
+  },
+  {
+    "id": "INC-2022-9051",
+    "date": "2022-12-07",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "electrical"
+    ],
+    "gas_ppm": 100,
+    "oxygen_pct": 20.6,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simulated incident in Zone-C-Confined involving electrical. Root cause: gas_accumulation_during_hot_work.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2023-002",
+    "date": "2023-01-08",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 95,
+    "oxygen_pct": 19.7,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Coke-oven maintenance with hot work as entrapped gases built up.",
+    "outcome": "Explosion; multiple injuries (Vizag-type pattern)."
+  },
+  {
+    "id": "INC-2023-9008",
+    "date": "2023-02-09",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 63,
+    "oxygen_pct": 19.0,
+    "severity": "HIGH",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-B-Process involving confined_space, maintenance. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2023-014",
+    "date": "2023-04-22",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "electrical"
+    ],
+    "gas_ppm": 8,
+    "oxygen_pct": 20.9,
+    "severity": "MEDIUM",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Switchgear work during monsoon humidity without ELCB verification.",
+    "outcome": "Minor shock; near miss."
+  },
+  {
+    "id": "INC-2023-9075",
+    "date": "2023-06-11",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 52,
+    "oxygen_pct": 20.0,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-D-Substation involving hot_work. Root cause: ventilation_failure.",
+    "outcome": "Worker overcome; rescued."
+  },
+  {
+    "id": "INC-2023-020",
+    "date": "2023-06-17",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 66,
+    "oxygen_pct": 18.4,
+    "severity": "CRITICAL",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Pit maintenance with monsoon water ingress displacing oxygen.",
+    "outcome": "One worker rescued; near fatality."
+  },
+  {
+    "id": "INC-2023-9054",
+    "date": "2023-08-03",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 50,
+    "oxygen_pct": 17.9,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-C-Confined involving cold_work. Root cause: electrical_in_high_humidity.",
+    "outcome": "Near miss; caught on manual round."
+  },
+  {
+    "id": "INC-2023-028",
+    "date": "2023-08-09",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 57,
+    "oxygen_pct": 20.4,
+    "severity": "HIGH",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Gas crept above 50 ppm during hot work; single high-alarm never tripped.",
+    "outcome": "Near miss; caught on manual round."
+  },
+  {
+    "id": "INC-2023-9016",
+    "date": "2023-08-27",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 87,
+    "oxygen_pct": 16.6,
+    "severity": "CRITICAL",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Simulated incident in Zone-D-Substation involving hot_work, maintenance. Root cause: oxygen_displacement_confined_entry.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2023-9061",
+    "date": "2023-09-12",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "maintenance"
+    ],
+    "gas_ppm": 95,
+    "oxygen_pct": 17.2,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-B-Process involving maintenance. Root cause: electrical_in_high_humidity.",
+    "outcome": "Near miss; caught on manual round."
+  },
+  {
+    "id": "INC-2023-9076",
+    "date": "2023-09-26",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "shift_changeover"
+    ],
+    "gas_ppm": 75,
+    "oxygen_pct": 18.2,
+    "severity": "HIGH",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space, shift_changeover. Root cause: handover_supervision_gap.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2023-9078",
+    "date": "2023-10-01",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 79,
+    "oxygen_pct": 20.1,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_general",
+    "description": "Simulated incident in Zone-C-Confined involving confined_space, hot_work. Root cause: gas_accumulation_general.",
+    "outcome": "Worker overcome; rescued."
+  },
+  {
+    "id": "INC-2023-035",
+    "date": "2023-10-25",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "shift_changeover"
+    ],
+    "gas_ppm": 64,
+    "oxygen_pct": 18.8,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Entry authorised just before the 22:00 handover; standby watch lapsed.",
+    "outcome": "Worker overcome; buddy raised alarm."
+  },
+  {
+    "id": "INC-2023-9055",
+    "date": "2023-11-20",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "electrical",
+      "maintenance"
+    ],
+    "gas_ppm": 90,
+    "oxygen_pct": 18.2,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-C-Confined involving electrical, maintenance. Root cause: handover_supervision_gap.",
+    "outcome": "Explosion; severe damage."
+  },
+  {
+    "id": "INC-2023-9050",
+    "date": "2023-11-27",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "confined_space",
+      "hot_work"
+    ],
+    "gas_ppm": 85,
+    "oxygen_pct": 17.1,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving confined_space, hot_work. Root cause: handover_supervision_gap.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2023-9039",
+    "date": "2023-12-23",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 62,
+    "oxygen_pct": 16.5,
+    "severity": "CRITICAL",
+    "root_cause": "ventilation_failure",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving hot_work, maintenance. Root cause: ventilation_failure.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2024-9049",
+    "date": "2024-01-07",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "electrical",
+      "maintenance"
+    ],
+    "gas_ppm": 103,
+    "oxygen_pct": 18.0,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_general",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving electrical, maintenance. Root cause: gas_accumulation_general.",
+    "outcome": "One fatality from asphyxiation."
+  },
+  {
+    "id": "INC-2024-9044",
+    "date": "2024-01-30",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 12,
+    "oxygen_pct": 17.2,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-D-Substation involving cold_work. Root cause: handover_supervision_gap.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2024-006",
+    "date": "2024-02-13",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "cold_work"
+    ],
+    "gas_ppm": 41,
+    "oxygen_pct": 20.7,
+    "severity": "MEDIUM",
+    "root_cause": "gas_accumulation_general",
+    "description": "Cold work with detectable gas above 30 ppm; ventilation inadequate.",
+    "outcome": "Near miss; increased monitoring."
+  },
+  {
+    "id": "INC-2024-9029",
+    "date": "2024-02-18",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "hot_work"
+    ],
+    "gas_ppm": 72,
+    "oxygen_pct": 20.5,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-D-Substation involving hot_work. Root cause: handover_supervision_gap.",
+    "outcome": "Worker overcome; rescued."
+  },
+  {
+    "id": "INC-2024-9022",
+    "date": "2024-03-16",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "electrical",
+      "maintenance"
+    ],
+    "gas_ppm": 19,
+    "oxygen_pct": 20.6,
+    "severity": "LOW",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-D-Substation involving electrical, maintenance. Root cause: handover_supervision_gap.",
+    "outcome": "Minor injury; first aid given."
+  },
+  {
+    "id": "INC-2024-9071",
+    "date": "2024-04-30",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "electrical",
+      "maintenance"
+    ],
+    "gas_ppm": 51,
+    "oxygen_pct": 17.7,
+    "severity": "CRITICAL",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Simulated incident in Zone-D-Substation involving electrical, maintenance. Root cause: electrical_in_high_humidity.",
+    "outcome": "Two workers overcome; recovered."
+  },
+  {
+    "id": "INC-2024-013",
+    "date": "2024-05-01",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 82,
+    "oxygen_pct": 18.1,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Simultaneous maintenance and hot work in a confined vessel with rising gas.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2024-9009",
+    "date": "2024-05-16",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "hot_work",
+      "shift_changeover"
+    ],
+    "gas_ppm": 80,
+    "oxygen_pct": 19.7,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_general",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving hot_work, shift_changeover. Root cause: gas_accumulation_general.",
+    "outcome": "Near miss; work stopped."
+  },
+  {
+    "id": "INC-2024-9073",
+    "date": "2024-05-24",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "maintenance"
+    ],
+    "gas_ppm": 101,
+    "oxygen_pct": 17.6,
+    "severity": "CRITICAL",
+    "root_cause": "equipment_failure_during_maintenance",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving maintenance. Root cause: equipment_failure_during_maintenance.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2024-9026",
+    "date": "2024-06-08",
+    "zone": "Zone-A-Tank-Farm",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 101,
+    "oxygen_pct": 19.9,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Simulated incident in Zone-A-Tank-Farm involving hot_work, maintenance. Root cause: handover_supervision_gap.",
+    "outcome": "Flash fire; evacuation triggered."
+  },
+  {
+    "id": "INC-2024-021",
+    "date": "2024-07-19",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "maintenance",
+      "shift_changeover"
+    ],
+    "gas_ppm": 71,
+    "oxygen_pct": 18.3,
+    "severity": "CRITICAL",
+    "root_cause": "handover_supervision_gap",
+    "description": "Monsoon maintenance across handover; gas trend not communicated to next shift.",
+    "outcome": "Two workers overcome; both recovered."
+  },
+  {
+    "id": "INC-2024-030",
+    "date": "2024-09-28",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 90,
+    "oxygen_pct": 19.9,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Reactor maintenance with hot work; entrapped gas released suddenly.",
+    "outcome": "Explosion; severe injuries."
+  },
+  {
+    "id": "INC-2024-037",
+    "date": "2024-12-05",
+    "zone": "Zone-D-Substation",
+    "permits": [
+      "electrical"
+    ],
+    "gas_ppm": 6,
+    "oxygen_pct": 20.9,
+    "severity": "LOW",
+    "root_cause": "electrical_in_high_humidity",
+    "description": "Winter fog condensation on switchgear; earth fault.",
+    "outcome": "Near miss; no injury."
+  },
+  {
+    "id": "INC-2025-001",
+    "date": "2025-01-13",
+    "zone": "Zone-B-Process",
+    "permits": [
+      "hot_work",
+      "maintenance"
+    ],
+    "gas_ppm": 118,
+    "oxygen_pct": 18.4,
+    "severity": "CRITICAL",
+    "root_cause": "gas_accumulation_during_hot_work",
+    "description": "Coke-oven battery maintenance; entrapped gases triggered a sudden explosion (Visakhapatnam Steel-type event).",
+    "outcome": "Multiple fatalities."
+  },
+  {
+    "id": "INC-2025-009",
+    "date": "2025-03-02",
+    "zone": "Zone-C-Confined",
+    "permits": [
+      "confined_space",
+      "maintenance"
+    ],
+    "gas_ppm": 60,
+    "oxygen_pct": 18.6,
+    "severity": "HIGH",
+    "root_cause": "oxygen_displacement_confined_entry",
+    "description": "Vessel maintenance; oxygen dipped below 19.5% while gas accumulated below the single high-alarm.",
+    "outcome": "Near miss; compound alert would have fired 15 min earlier."
+  }
 ]
