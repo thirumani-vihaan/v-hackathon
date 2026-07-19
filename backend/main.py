@@ -42,13 +42,13 @@ from agents.output_agent import OutputAgent  # noqa: E402
 from utils.interventions import rank_interventions as _rule_interventions  # noqa: E402,F401
 from utils.risk_model import graduated_risk, rank_interventions  # noqa: E402
 from utils.confidence import assess_confidence  # noqa: E402
+from utils.forecast import forecast_summary  # noqa: E402
 from utils.limit_check import limit_utilisation  # noqa: E402
 from utils.baseline_detector import PROFILES as _SINGLE_PROFILES  # noqa: E402
 from utils.zone_status import zone_colors  # noqa: E402
 from utils import knowledge_graph as kg  # noqa: E402
 from utils import incident_intelligence as ii  # noqa: E402
 from utils import exposure_calc, response_directory, translations  # noqa: E402
-from utils.forecast import forecast_summary  # noqa: E402
 from utils.audit_logger import verify_chain, append_event, read_last_n  # noqa: E402
 
 app = FastAPI(title="IndustrialSafetyAI API", version="1.0")
@@ -61,6 +61,10 @@ _output = OutputAgent()
 _knowledge = None  # lazy
 _vision = None  # lazy
 
+from collections import defaultdict, deque
+
+# Stateful edge cache for forecasting
+_ZONE_HISTORY = defaultdict(lambda: {"gas": deque(maxlen=10), "oxygen": deque(maxlen=10)})
 
 def _get_knowledge():
     global _knowledge
@@ -159,6 +163,12 @@ def scan(req: ScanRequest):
     if reading.temp_c >= sp["temp_c"]:
         single.append("temperature")
 
+    # Update history and generate forecast
+    hist = _ZONE_HISTORY[reading.zone]
+    hist["gas"].append(reading.gas_ppm)
+    hist["oxygen"].append(reading.oxygen_pct)
+    forecast = forecast_summary(list(hist["gas"]), list(hist["oxygen"]))
+
     result = {
         "risk_score": grad["score"],
         "band": grad["band"],
@@ -179,6 +189,7 @@ def scan(req: ScanRequest):
         "limits": limits,
         "single_sensor": {"fired": single, "count": len(single), "total": 3,
                           "compound_fires": grad["score"] >= 50},
+        "forecast": forecast
     }
     event_data = {
         "type": "api_scan", 
