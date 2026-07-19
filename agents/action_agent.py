@@ -86,11 +86,12 @@ Thought:{agent_scratchpad}'''
 
         query = (
             f"The current zone is {zone}. The system reported a risk score of {risk_score} "
-            f"and a forecast of {forecast_minutes} minutes until critical gas IDLH. "
-            f"You MUST use the `query_safety_manual` tool to verify the official guidelines for critical gas exposure and shutdown thresholds. "
-            f"Then, use the `get_recent_telemetry` tool to confirm the trend in the database. "
-            f"If the manual confirms this is a critical situation and the telemetry is high, you MUST invoke `issue_mqtt_command` to shut down the plant. "
-            f"Otherwise, do not issue the command. Reason through these steps clearly."
+            f"and a forecast of {forecast_minutes} minutes until critical gas IDLH.\n"
+            f"You are the autonomous Safety Commander. You must investigate the hazard before deciding to shut down.\n"
+            f"1. Use `query_safety_manual` to verify official OISD guidelines for this gas risk.\n"
+            f"2. Use `get_recent_telemetry` to check if the trend in the database corroborates the immediate threat.\n"
+            f"3. Synthesize your findings. If you determine the situation is a genuine emergency, you MUST invoke `issue_mqtt_command` to shut down the plant. Otherwise, declare it safe.\n"
+            f"Think step-by-step."
         )
         
         try:

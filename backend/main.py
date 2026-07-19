@@ -27,7 +27,7 @@ try:
 except Exception:
     pass
 
-from fastapi import FastAPI, HTTPException, UploadFile, File  # noqa: E402
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
@@ -143,19 +143,28 @@ def health():
 @app.on_event("startup")
 def _prewarm_knowledge():
     """Load the heavy RAG stack in a background thread so the API starts instantly but
-    the first /api/knowledge query is fast instead of paying a ~16s cold load."""
+    the first /api/knowledge query is fast instead of paying a ~16s cold load.
+    Also ensures the ViT models are downloaded and MQTT listener is running."""
     import threading
+    import subprocess
 
     def _warm():
         try:
             _get_knowledge()
-        except Exception:
-            pass
+            # Ensure ViT is downloaded if missing
+            vit_path = os.path.join(_ROOT, "models", "vit_local")
+            if not os.path.isdir(vit_path):
+                subprocess.Popen([sys.executable, os.path.join(_ROOT, "models", "download_vit.py")]).wait()
+                subprocess.Popen([sys.executable, os.path.join(_ROOT, "models", "train_vit_head.py")]).wait()
+            # Launch MQTT listener in background
+            subprocess.Popen([sys.executable, os.path.join(_ROOT, "backend", "mqtt_listener.py")])
+        except Exception as e:
+            print(f"Startup task failed: {e}")
     threading.Thread(target=_warm, daemon=True).start()
 
 
 @app.post("/api/scan")
-def scan(req: ScanRequest):
+def scan(req: ScanRequest, background_tasks: BackgroundTasks):
     try:
         reading = _to_reading(req.reading)
     except Exception as e:  # noqa: BLE001
@@ -220,7 +229,8 @@ def scan(req: ScanRequest):
 
     # Close the Loop: Autonomously publish MQTT shutdown if risk is CRITICAL via ActionAgent
     forecast_min = forecast.get("minutes_to_gas_idlh") if forecast else None
-    result["actuation"] = _action.decide_and_act(reading.zone, grad["score"], forecast_min)
+    background_tasks.add_task(_action.decide_and_act, reading.zone, grad["score"], forecast_min)
+    result["actuation"] = "Evaluation queued in background"
 
     event_data = {
         "type": "api_scan", 
