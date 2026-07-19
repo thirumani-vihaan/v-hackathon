@@ -118,6 +118,8 @@
     "incidents_avoided_in_sample": 21,
     "financial_impact": {
       "currency": "INR",
+      "unit_cost_avoidance": 6000000,
+      "formatted_unit_impact": "\u20b96,000,000",
       "cost_avoidance": 126000000,
       "formatted_impact": "\u20b9126,000,000"
     },
