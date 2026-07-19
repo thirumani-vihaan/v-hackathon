@@ -428,13 +428,15 @@ export function ToolsTab({ r }) {
 export function BenchmarkTab() {
   const [b, setB] = useState(null);
   useEffect(() => { api.benchmark().then(setB).catch(() => setB(null)); }, []);
+  const [stress, setStress] = useState(null);
+
   if (!b) return <div className="card sub">Loading benchmark…</div>;
   const h = b.headline;
   const D = b.detectors;
   const names = { single_high: "Single-sensor (evac-grade)", single_low: "Single-sensor (sensitive)", compound: "Compound (reactive)", compound_pred: "Compound + prediction (ours)" };
   const pc = (x) => (x == null ? "—" : `${Math.round(x * 100)}%`);
   const miss = (d) => (d ? `${d.operational_false_negatives} / ${d.incidents}` : "—");
-  const [stress, setStress] = useState(null);
+
   const runStressTest = () => {
     setStress({ running: true });
     fetch("/api/stress-test?trials=100", { method: "POST" })
