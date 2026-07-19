@@ -214,12 +214,13 @@ def run(seed: int = 42) -> Dict:
         fn_reduction_pct = round((base - ours) * 100, 1)
         incidents_avoided = int(round((base - ours) * summary["incidents"]))
         
-        # Financial Impact Model
+        # Illustrative unit-cost assumptions
         # Avg cost of major industrial incident = ₹5,000,000 (damage, downtime)
         # Compliance liability/fine avoidance = ₹1,000,000 per incident
         cost_per_incident = 50_00_000
         liability_per_incident = 10_00_000
-        total_avoidance = incidents_avoided * (cost_per_incident + liability_per_incident)
+        unit_avoidance = cost_per_incident + liability_per_incident
+        total_avoidance = incidents_avoided * unit_avoidance
         
         summary["headline"] = {
             "single_sensor_operational_false_negative_rate": base,
@@ -228,6 +229,8 @@ def run(seed: int = 42) -> Dict:
             "incidents_avoided_in_sample": incidents_avoided,
             "financial_impact": {
                 "currency": "INR",
+                "unit_cost_avoidance": unit_avoidance,
+                "formatted_unit_impact": f"₹{unit_avoidance:,.0f}",
                 "cost_avoidance": total_avoidance,
                 "formatted_impact": f"₹{total_avoidance:,.0f}"
             },
@@ -266,7 +269,8 @@ def main():
               f"a {h['false_negative_reduction_pct']:.0f} pt reduction; "
               f"median lead {h['compound_median_lead_minutes']} min.")
         print(f"FINANCIAL IMPACT: {h['incidents_avoided_in_sample']} incidents avoided. "
-              f"Estimated cost & liability avoidance: {h['financial_impact']['formatted_impact']}.")
+              f"Illustrative unit-cost assumption: {h['financial_impact']['formatted_unit_impact']}/incident. "
+              f"Total avoided liability in this sample: {h['financial_impact']['formatted_impact']}.")
 
     print("\nBy scenario kind (incident kinds = operational miss rate; "
           "safe kinds = false-alarm rate):")

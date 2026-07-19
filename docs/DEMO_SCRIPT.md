@@ -38,11 +38,11 @@ This script is designed for a strict 4-minute hackathon presentation. It details
 **Speaker**: "And if the cloud goes down? Our architecture degrades gracefully. We trained a custom PyTorch Vision Transformer (ViT) head that runs 100% locally on the edge. Even if the Gemini API rate-limits or the plant loses Wi-Fi, the safety loop never breaks."
 
 ## 2:30 - 3:30 | Preempting the Judges (The Live Proof)
-**Visual**: Open a new terminal tab (or split pane).
+**Visual**: Scroll down to the **Trust & Proof: Live Stress Test** section on the Benchmark tab.
 
 **Speaker**: "We know you see a lot of 'AI demos' that fall apart outside the happy path. You might wonder if our scoring engine just hallucinates escalations. Let's run a stress test live."
 
-**Action**: In the terminal, run: `curl -X POST http://localhost:8000/api/stress-test?trials=100`
+**Action**: Click the "Run Live Stress Test" button.
 **Speaker**: "I just hit our stress-test API to generate 100 random zero-context anomalies—extreme temperatures and humidity, but safe gas and no permits. Because we implemented a strict structural hard gate in code before the graduated model, you can see the false escalation rate is exactly 0%."
 
 ## 3:30 - 4:00 | The Moat & The Close (₹ Impact)

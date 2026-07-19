@@ -434,17 +434,43 @@ export function BenchmarkTab() {
   const names = { single_high: "Single-sensor (evac-grade)", single_low: "Single-sensor (sensitive)", compound: "Compound (reactive)", compound_pred: "Compound + prediction (ours)" };
   const pc = (x) => (x == null ? "—" : `${Math.round(x * 100)}%`);
   const miss = (d) => (d ? `${d.operational_false_negatives} / ${d.incidents}` : "—");
+  const [stress, setStress] = useState(null);
+  const runStressTest = () => {
+    setStress({ running: true });
+    fetch("/api/stress-test?trials=100", { method: "POST" })
+      .then(r => r.json())
+      .then(d => setStress({ running: false, data: d }))
+      .catch(e => setStress({ running: false, error: String(e) }));
+  };
+
   return (
     <div className="col">
       {h && h.financial_impact && (
         <div className="card" style={{ padding: 16, background: "rgba(46, 204, 113, 0.1)", border: "1px solid #2ecc71", borderRadius: 8, marginBottom: 0 }}>
           <h3 style={{ color: "#2ecc71", marginTop: 0, marginBottom: 8 }}>₹ Financial ROI Model</h3>
           <div className="sub" style={{ lineHeight: 1.5, color: "#e2e8f0" }}>
-            The <b>{h.false_negative_reduction_pct}% reduction</b> in operational false negatives prevented <b>{h.incidents_avoided_in_sample} major incidents</b> in this sample. 
-            Estimated total cost and compliance liability avoided: <strong style={{ fontSize: "1.1em" }}>{h.financial_impact.formatted_impact}</strong>.
+            The <b>{h.false_negative_reduction_pct}% reduction</b> in operational false negatives prevented <b>{h.incidents_avoided_in_sample} major incidents</b> in this benchmark. 
+            At an illustrative unit-cost assumption of {h.financial_impact.formatted_unit_impact} per incident (damage + compliance liability), that is an estimated <strong style={{ fontSize: "1.1em" }}>{h.financial_impact.formatted_impact}</strong> in avoided liabilities for this scenario set.
           </div>
         </div>
       )}
+      
+      <div className="card" style={{ padding: 16, border: "1px solid #3b82f6", borderRadius: 8 }}>
+        <h3 style={{ color: "#60a5fa", marginTop: 0, marginBottom: 8 }}>Trust & Proof: Live Stress Test</h3>
+        <div className="sub" style={{ lineHeight: 1.5, color: "#e2e8f0", marginBottom: 12 }}>
+          Wondering if the AI hallucinates escalations? Run a live, zero-context stress test. This triggers 100 randomized anomalies (extreme temperatures and humidity, but safe gas and no permits) through the live engine to prove the structural hard gate prevents false escalations.
+        </div>
+        <button onClick={runStressTest} disabled={stress?.running} style={{ padding: "8px 16px", background: "#3b82f6", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
+          {stress?.running ? "Running 100 Trials..." : "Run Live Stress Test"}
+        </button>
+        {stress?.data && (
+          <div style={{ marginTop: 12, padding: 12, background: "rgba(59, 130, 246, 0.1)", border: "1px solid #3b82f6", borderRadius: 6 }}>
+            <strong style={{ color: "#60a5fa" }}>Result:</strong> {stress.data.false_escalation_rate} False Escalations across {stress.data.trials_run} trials. <br/>
+            <span className="sub">{stress.data.message}</span>
+          </div>
+        )}
+      </div>
+
       <div className="card">
         <h3>How We Tested</h3>
         <div className="sub" style={{ lineHeight: 1.65 }}>
