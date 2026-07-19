@@ -83,12 +83,14 @@ def test_local_vision_unreadable_is_safe():
 def test_trained_model_present_and_used(tmp_path):
     # model file should exist (trained during build) and load without error
     assert os.path.isfile(local_vision._MODEL_PATH)
-    m = local_vision._load_model()
-    assert m is not None
-    W, b, mu, sigma = m
+    res = local_vision._load_model()
+    assert res is not None
+    mlp_res, vit_res, head_res = res
+    assert mlp_res is not None
+    model, mu, sigma = mlp_res
     # model dimension matches the current feature vector
     feat_dim = local_vision.features(np.zeros((16, 16, 3), dtype=np.uint8)).shape[0]
-    assert W.shape[0] == feat_dim
+    assert len(mu) == feat_dim
 
 
 # ---------- exposure calculator ----------

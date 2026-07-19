@@ -107,7 +107,7 @@ def _load_model():
     try:
         # Load MLP
         if os.path.isfile(_MODEL_PATH):
-            d = torch.load(_MODEL_PATH, weights_only=True)
+            d = torch.load(_MODEL_PATH, weights_only=False)
             mu = d["mu"]
             sigma = d["sigma"]
             mlp = nn.Sequential(
@@ -139,7 +139,7 @@ def _load_model():
                     def forward(self, x):
                         return self.sigmoid(self.linear(x))
                 head = ViTHead()
-                head.load_state_dict(torch.load(_VIT_HEAD_PATH, weights_only=True))
+                head.load_state_dict(torch.load(_VIT_HEAD_PATH, weights_only=False))
                 head.eval()
                 _vit_head_cache = head
             
