@@ -180,8 +180,20 @@ def scan(req: ScanRequest):
         "single_sensor": {"fired": single, "count": len(single), "total": 3,
                           "compound_fires": grad["score"] >= 50},
     }
-    append_event({"type": "api_scan", "risk_score": grad["score"],
-                  "severity": comp.highest_severity, "zone": reading.zone})
+    event_data = {
+        "type": "api_scan", 
+        "risk_score": grad["score"],
+        "severity": comp.highest_severity, 
+        "zone": reading.zone
+    }
+    
+    # Knowledge Graph Permit-Proximity Conflict Logging
+    zone_states = {reading.zone: {"gas_ppm": reading.gas_ppm, "permits": permits}}
+    conflicts = kg.permits_near_hazard(zone_states)
+    if conflicts:
+        event_data["kg_conflicts"] = conflicts
+
+    append_event(event_data)
     return result
 
 
