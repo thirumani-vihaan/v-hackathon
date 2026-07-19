@@ -37,7 +37,7 @@ PS1's decisive metric is *"reduction in false-negative rate."* We measure it hon
 
 > Single sensors force an impossible trade-off — go **blind** to sub-threshold conjunctions, *or* **drown** operators in false alarms. Our engine fuses **gas + permit + confinement + maintenance + shift-changeover + trend** to escape it: it catches every incident on the benchmark, early, without crying wolf.
 > 
-> **₹ Financial Impact**: In our benchmark, the 81-point reduction in operational false negatives prevented 21 major incidents. Using standard metrics (₹5,000,000 incident cost + ₹1,000,000 compliance fine), that is **₹126,000,000** in avoided liabilities per sample period.
+> **₹ Financial Impact**: In our benchmark, the 81-point reduction in operational false negatives prevented 21 major incidents. Using illustrative unit-cost assumptions (₹50L/incident, ₹10L/compliance fine — not a verified industry figure), that's ~₹12.6Cr in avoided liability across the 26-incident benchmark set.
 >
 > *Counts are on the synthetic benchmark; real-world rates depend on sensor coverage and are non-zero — the point is the large, defensible gap vs single-sensor baselines.*
 
@@ -245,7 +245,7 @@ limits + predictive stream) · **Zone Map** (Leaflet + heatmap + permit-proximit
 **Vision** (upload/camera + Gemini/offline badge) · **Knowledge** (RAG chat, saved to
 device) · **Emergency** (multilingual voice dispatch + briefing) · **Safety Tools**
 (exposure calculator + facilities) · **Intelligence** (agent pipeline + incident patterns
-+ tamper-evident audit) · **Benchmark** (methodology + honest results).
++ tamper-evident audit) · **Benchmark** (methodology + honest results + **live zero-context stress test button**).
 
 ---
 
