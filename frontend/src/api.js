@@ -31,4 +31,5 @@ export const api = {
     fd.append("file", file);
     return fetch("/api/vision", { method: "POST", body: fd }).then(j);
   },
+  stressTest: (trials = 100) => fetch(`/api/stress-test?trials=${trials}`, { method: "POST" }).then(j),
 };

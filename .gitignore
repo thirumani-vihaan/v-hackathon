@@ -10,3 +10,4 @@ knowledge_base/processed/
 *.pdf
 .pytest_cache/
 models/vit_local/
+telemetry.db

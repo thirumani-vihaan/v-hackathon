@@ -79,3 +79,12 @@ def test_facilities():
     f = client.get("/api/facilities", params={"zone": "Zone-C-Confined"}).json()
     assert len(f["nearest"]) > 0
     assert "contacts" in f
+
+
+def test_stress_test_zero_false_escalations():
+    r = client.post("/api/stress-test", params={"trials": 100})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["trials_run"] == 100
+    assert d["false_escalations"] == 0
+    assert d["false_escalation_rate"] == "0%"

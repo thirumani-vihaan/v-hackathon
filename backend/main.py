@@ -314,7 +314,7 @@ def stress_test(trials: int = 100):
             permit_type=None
         )
         
-        g = risk_model.graduated_risk(r, [])
+        g = graduated_risk(r, [])
         if g["score"] >= 20:
             false_escalations += 1
             

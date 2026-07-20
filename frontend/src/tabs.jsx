@@ -438,11 +438,10 @@ export function BenchmarkTab() {
   const miss = (d) => (d ? `${d.operational_false_negatives} / ${d.incidents}` : "—");
 
   const runStressTest = () => {
-    setStress({ running: true });
-    fetch("/api/stress-test?trials=100", { method: "POST" })
-      .then(r => r.json())
-      .then(d => setStress({ running: false, data: d }))
-      .catch(e => setStress({ running: false, error: String(e) }));
+    setStress({ running: true, error: null, data: null });
+    api.stressTest(100)
+      .then((d) => setStress({ running: false, data: d }))
+      .catch((e) => setStress({ running: false, error: String(e) }));
   };
 
   return (
@@ -467,8 +466,13 @@ export function BenchmarkTab() {
         </button>
         {stress?.data && (
           <div style={{ marginTop: 12, padding: 12, background: "rgba(59, 130, 246, 0.1)", border: "1px solid #3b82f6", borderRadius: 6 }}>
-            <strong style={{ color: "#60a5fa" }}>Result:</strong> {stress.data.false_escalation_rate} False Escalations across {stress.data.trials_run} trials. <br/>
+            <strong style={{ color: "#60a5fa" }}>Result:</strong> {stress.data.false_escalations} false escalations ({stress.data.false_escalation_rate}) across {stress.data.trials_run} trials. <br/>
             <span className="sub">{stress.data.message}</span>
+          </div>
+        )}
+        {stress?.error && (
+          <div style={{ marginTop: 12, padding: 12, background: "rgba(231, 76, 60, 0.1)", border: "1px solid #e74c3c", borderRadius: 6, color: "#fca5a5" }}>
+            <strong>Stress test failed:</strong> {stress.error}
           </div>
         )}
       </div>
